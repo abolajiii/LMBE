@@ -380,7 +380,7 @@ const uploadJob = async (req, res) => {
     // Update client details
     client.totalJobs += data.length; // Increment totalJobs by the number of deliveries
     client.lastJobDate = new Date();
-    client.totalJobAmount += transaction.totalJobAmount; // Update totalJobAmount based on the transaction
+    client.totalJobAmount += jobDetails.amount; // Update totalJobAmount based on the transaction
     await client.save();
 
     res
