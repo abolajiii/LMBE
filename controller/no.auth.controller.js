@@ -15,7 +15,6 @@ const welcomeTemplatePath = path.join(__dirname, "../templates", "welcome.ejs");
 const loginUser = async (userInfo) => {
   const { emailOrUsername, password } = userInfo;
 
-  console.log();
   try {
     // Check if the user exists by username or email
     const user = await User.findOne({
