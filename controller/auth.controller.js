@@ -14,7 +14,6 @@ const handleJob = async (data, userId, client) => {
 
 const handleSingleOrMultipleJob = async (data, userId, client) => {
   try {
-    // Check if there is a transaction for the day
     const today = new Date().toISOString().split("T")[0];
     let transaction = await Transaction.findOne({
       user: userId,
@@ -22,7 +21,6 @@ const handleSingleOrMultipleJob = async (data, userId, client) => {
     });
 
     if (!transaction) {
-      // If no transaction, create a new one
       transaction = new Transaction({
         user: userId,
         totalJobAmount: 0,
@@ -34,40 +32,36 @@ const handleSingleOrMultipleJob = async (data, userId, client) => {
       });
     }
 
-    // Handle the job details
     const jobDetails = {
       transaction: transaction._id,
       customerName: data.customerName,
       pickUp: data.pickUp,
-      amount: 0, // Initialize amount to 0
-      payer: "", // Initialize payer to an empty string
+      amount: 0,
+      payer: "",
       jobStatus: "pending",
       paymentStatus: "not-paid",
     };
 
-    // Loop through each delivery in data.delivery
     for (const delivery of data.delivery) {
-      // Update job details for each delivery
       jobDetails.delivery = delivery.location;
       jobDetails.amount = Number(delivery.amount);
       jobDetails.payer = delivery.payer;
 
-      // Save the job details to the database
       const job = new Job(jobDetails);
       await job.save();
 
-      // Update the transaction properties
       transaction.jobs.push(job._id);
       transaction.totalJobAmount += jobDetails.amount;
       transaction.numberOfJobs++;
       transaction.paymentStatus = "not-paid";
-      await transaction.save();
     }
 
-    // Update client details
-    client.totalJobs += data.delivery.length; // Increment totalJobs by the number of deliveries
+    await transaction.save();
+
+    // Update client details outside the loop
+    client.totalJobs += data.delivery.length;
     client.lastJobDate = new Date();
-    client.totalJobAmount += transaction.totalJobAmount; // Update totalJobAmount based on the transaction
+    client.totalJobAmount += jobDetails.amount;
     await client.save();
 
     return transaction;
@@ -78,13 +72,10 @@ const handleSingleOrMultipleJob = async (data, userId, client) => {
 
 const createJob = async (req, res) => {
   const userId = req.user._id;
-
   const data = req.body.data;
-
   const { customerName } = data;
 
   try {
-    // Find or create the client based on the user and client name
     let client = await Client.findOne({ user: userId, name: customerName });
 
     if (!client) {
@@ -98,7 +89,6 @@ const createJob = async (req, res) => {
       await client.save();
     }
 
-    // Handle the job based on delivery type
     const job = await handleJob(data, userId, client);
     res.status(201).json({ message: "Job created successfully.", id: job._id });
   } catch (e) {
@@ -811,7 +801,7 @@ const getBarChartDetails = async (req, res) => {
 
 const getDashboardDetails = async (req, res) => {
   const userId = req.user._id;
-  // console.log(userId);
+  console.log(userId);
   try {
     // Find all transactions for the user
     const transactions = await Transaction.find({ user: userId });

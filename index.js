@@ -46,28 +46,30 @@ app.use("/api/v1/", authRoute);
 app.use("/api/v1/", noAuthRoute);
 
 const newDnd = async () => {
-  // await User.deleteMany();
-  // await DailyExpense.deleteMany();
-  // await Job.deleteMany();
-  // await Client.deleteMany();
-  // await Transaction.deleteMany();
-  // await RefreshToken.deleteMany();
-
+  // const user = await User.find({});
+  // console.log(user);
+  // await DailyExpense.deleteMany({
+  // user: "65683bd4312811ff3337556d",
+  // });
+  // await DailyExpense.deleteMany({ user: "6569c1c0e61f2a962f1b31e4" });
+  // await Job.deleteMany({ user: "6569c1c0e61f2a962f1b31e4" });
+  // await Client.deleteMany({
+  //   user: "6569c1c0e61f2a962f1b31e4",
+  // });
+  // await Transaction.deleteMany({ user: "65683bd4312811ff3337556d" });
+  // await RefreshToken.deleteMany({ user: "65683bd4312811ff3337556d" });
   //   const data = {
   //     username: "dev",
   //     email: "dev@dev.com",
   //     password: "Admin12345!",
   //     businessName: "aquad-errands",
   //   };˜
-
   //   const response = await registerUser(data);
-
   //   console.log(response);
-
-  await createJobsAndExpenses();
+  // await createJobsAndExpenses();
 };
 
-// newDnd();
+newDnd();
 
 // getWeeklyReport();
 // createJobsAndExpenses();
