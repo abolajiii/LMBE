@@ -51,12 +51,12 @@ const newDnd = async () => {
   // await DailyExpense.deleteMany({
   // user: "65683bd4312811ff3337556d",
   // });
-  // await DailyExpense.deleteMany({ user: "6569c1c0e61f2a962f1b31e4" });
-  // await Job.deleteMany({ user: "6569c1c0e61f2a962f1b31e4" });
-  // await Client.deleteMany({
-  //   user: "6569c1c0e61f2a962f1b31e4",
-  // });
-  // await Transaction.deleteMany({ user: "65683bd4312811ff3337556d" });
+  await DailyExpense.deleteMany({ user: "65683bd4312811ff3337556d" });
+  await Job.deleteMany({ user: "65683bd4312811ff3337556d" });
+  await Client.deleteMany({
+    user: "65683bd4312811ff3337556d",
+  });
+  await Transaction.deleteMany({ user: "65683bd4312811ff3337556d" });
   // await RefreshToken.deleteMany({ user: "65683bd4312811ff3337556d" });
   //   const data = {
   //     username: "dev",
@@ -69,7 +69,7 @@ const newDnd = async () => {
   // await createJobsAndExpenses();
 };
 
-newDnd();
+// newDnd();
 
 // getWeeklyReport();
 // createJobsAndExpenses();

@@ -350,20 +350,20 @@ const uploadJob = async (req, res) => {
         jobs: [],
       });
     }
+    const jobDetails = {
+      transaction: transaction._id,
+      customerName,
+      pickUp,
+      delivery: row.Delivery || row.delivery,
+      amount: Number(row.Amount || row.amount) || 0,
+      payer: row.Payer || row.payer,
+      jobStatus: "pending",
+      paymentStatus: "not-paid",
+    };
 
     // Handle the job details
     for (const row of data) {
       // Update job details for each row
-      const jobDetails = {
-        transaction: transaction._id,
-        customerName,
-        pickUp,
-        delivery: row.Delivery || row.delivery,
-        amount: Number(row.Amount || row.amount) || 0,
-        payer: row.Payer || row.payer,
-        jobStatus: "pending",
-        paymentStatus: "not-paid",
-      };
 
       // Save the job details to the database
       const job = new Job(jobDetails);
