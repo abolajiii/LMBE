@@ -1128,7 +1128,6 @@ const updateAllJobsInTransaction = async (req, res) => {
   const userId = req.user._id;
   const transactionId = req.params.id; // Assuming you're passing the ID in the URL params
   const { markDone, markPaid } = req.body; // Assuming you're sending these parameters in the request body
-
   try {
     // Fetch the transaction from the database
     const transaction = await Transaction.findById({
