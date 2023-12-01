@@ -856,7 +856,7 @@ const generateWeeklyReport = async (req, res) => {
 
     const weeksInMonth = getCompletedWeeksInMonth(userWorkingDays);
 
-    console.log(weeksInMonth);
+    console.log("weeksInMonth", weeksInMonth);
 
     const weeklyReport = [];
 
