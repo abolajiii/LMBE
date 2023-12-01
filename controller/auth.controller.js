@@ -54,6 +54,7 @@ const handleSingleOrMultipleJob = async (data, userId, client) => {
       transaction.totalJobAmount += jobDetails.amount;
       transaction.numberOfJobs++;
       transaction.paymentStatus = "not-paid";
+      client.totalJobAmount += jobDetails.amount; // Update totalJobAmount based on the transaction
     }
 
     await transaction.save();
@@ -61,7 +62,6 @@ const handleSingleOrMultipleJob = async (data, userId, client) => {
     // Update client details outside the loop
     client.totalJobs += data.delivery.length;
     client.lastJobDate = new Date();
-    client.totalJobAmount += jobDetails.amount;
     await client.save();
 
     return transaction;
@@ -350,19 +350,19 @@ const uploadJob = async (req, res) => {
         jobs: [],
       });
     }
-    const jobDetails = {
-      transaction: transaction._id,
-      customerName,
-      pickUp,
-      delivery: row.Delivery || row.delivery,
-      amount: Number(row.Amount || row.amount) || 0,
-      payer: row.Payer || row.payer,
-      jobStatus: "pending",
-      paymentStatus: "not-paid",
-    };
 
     // Handle the job details
     for (const row of data) {
+      const jobDetails = {
+        transaction: transaction._id,
+        customerName,
+        pickUp,
+        delivery: row.Delivery || row.delivery,
+        amount: Number(row.Amount || row.amount) || 0,
+        payer: row.Payer || row.payer,
+        jobStatus: "pending",
+        paymentStatus: "not-paid",
+      };
       // Update job details for each row
 
       // Save the job details to the database
@@ -374,13 +374,12 @@ const uploadJob = async (req, res) => {
       transaction.totalJobAmount += jobDetails.amount;
       transaction.numberOfJobs++;
       transaction.paymentStatus = "not-paid";
+      client.totalJobAmount += jobDetails.amount; // Update totalJobAmount based on the transaction
       await transaction.save();
     }
-
     // Update client details
     client.totalJobs += data.length; // Increment totalJobs by the number of deliveries
     client.lastJobDate = new Date();
-    client.totalJobAmount += jobDetails.amount; // Update totalJobAmount based on the transaction
     await client.save();
 
     res
