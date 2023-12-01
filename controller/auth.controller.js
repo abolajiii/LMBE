@@ -266,6 +266,21 @@ const deleteJob = async (req, res) => {
         transaction.paymentStatus = "void";
       }
 
+      const lastJobDate = await Job.findOne(
+        { _id: { $in: transaction.jobs } },
+        {},
+        { sort: { createdAt: -1 } }
+      );
+
+      // Update client details
+      const client = await Client.findOne({ name: deletedJob.customerName });
+      if (client) {
+        client.totalJobs -= 1;
+        client.totalJobAmount -= Number(deletedJob.amount);
+        client.lastJobDate = lastJobDate ? lastJobDate.createdAt : null;
+        await client.save();
+      }
+
       // Save the updated transaction
       await transaction.save();
     }
