@@ -853,99 +853,120 @@ const getDashboardDetails = async (req, res) => {
   }
 };
 
+const getTransactionsAndExpenses = async (weeklyReports, userId) => {
+  try {
+    const results = await Promise.all(
+      weeklyReports.map(async (week) => {
+        const startOfWeek = new Date(week.date.start);
+        const endOfWeek = new Date(week.date.end);
+
+        // Set start of the day
+        startOfWeek.setHours(0, 0, 0, 0);
+        // Set end of the day
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        // Get transactions for the week
+        const transactions = await Transaction.find({
+          createdAt: {
+            $gte: startOfWeek,
+            $lte: endOfWeek,
+          },
+          user: userId,
+        });
+
+        const totalAmount = transactions.reduce(
+          (total, transaction) => total + transaction.totalAmountPaid,
+          0
+        );
+
+        // console.log(transactions);
+
+        // Get expenses for the week
+        const expenses = await DailyExpense.find({
+          date: {
+            $gte: startOfWeek.toISOString().split("T")[0],
+            $lte: endOfWeek.toISOString().split("T")[0],
+          },
+          user: userId,
+        });
+
+        return {
+          week: week.week,
+          date: [startOfWeek, endOfWeek],
+          returns: totalAmount,
+          numberOfJobs: transactions.reduce(
+            (totalJobs, transaction) => totalJobs + transaction.numberOfJobs,
+            0
+          ),
+          expenses: expenses.reduce(
+            (total, expense) => total + expense.totalAmount,
+            0
+          ),
+        };
+      })
+    );
+
+    return results;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+const generateWeeklyArray = async (
+  workingDaysPerWeek = 6,
+  numberOfWeeks = 5,
+  currentDate = new Date()
+) => {
+  const weekReports = [];
+
+  for (let week = 1; week <= numberOfWeeks; week++) {
+    // Calculate the start of the week (Monday)
+    let mondayFromCurrentDate = new Date(currentDate);
+    mondayFromCurrentDate.setDate(
+      currentDate.getDate() - ((currentDate.getDay() + 6) % 7)
+    );
+
+    // Calculate the end of the week (Saturday)
+    const numberOfDays = workingDaysPerWeek === 6 ? 5 : 6;
+    let saturdayFromCurrentDate = new Date(mondayFromCurrentDate);
+    saturdayFromCurrentDate.setDate(
+      mondayFromCurrentDate.getDate() + numberOfDays
+    );
+
+    weekReports.push({
+      week,
+      date: {
+        start: mondayFromCurrentDate.toISOString().split("T")[0],
+        end: saturdayFromCurrentDate.toISOString().split("T")[0],
+      },
+    });
+
+    // Move to the next week
+    currentDate = new Date(saturdayFromCurrentDate);
+    currentDate.setDate(currentDate.getDate() - 7);
+
+    // console.log({ currentDate: currentDate.toISOString().split("T")[0] });
+  }
+  return weekReports; // Return the modified array
+};
+
 const generateWeeklyReport = async (req, res) => {
   try {
-    const userId = req.user.id; // Assuming you have the user ID in the request
-    const userWorkingDays = req.user.workingDays || 7; // Assuming user's working days are stored in req.user.workingDays
+    const allWeeks = await generateWeeklyArray();
+    const transactionAndExpenses = await getTransactionsAndExpenses(
+      allWeeks,
+      req.user._id
+    );
+    const newTransactions = transactionAndExpenses.filter(
+      (each) => each.numberOfJobs !== 0
+    );
 
-    const weeksInMonth = getCompletedWeeksInMonth(userWorkingDays);
-
-    console.log("weeksInMonth", weeksInMonth);
-
-    const weeklyReport = [];
-
-    for (const week of weeksInMonth) {
-      const startDate = moment(week[0]);
-      const endDate = moment(week[week.length - 1]);
-
-      // Query transactions within the date range
-      const transactions = await Transaction.find({
-        user: userId,
-        createdAt: { $gte: startDate, $lte: endDate.endOf("day").toDate() },
-      }).sort({ createdAt: 1 });
-
-      if (transactions.length > 0) {
-        const report = generateReportFromWeek(transactions, startDate, endDate);
-        weeklyReport.push(report);
-      }
-    }
-
-    // Return the weekly report
-    res.json({ report: weeklyReport });
+    res.status(200).json({ report: newTransactions });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-};
-
-// Helper function to get the completed weeks in the previous month
-const getCompletedWeeksInMonth = (year, month, workingDays) => {
-  const weeks = [];
-  const currentDay = moment(); // Use the current date
-
-  let lastTransactionDate = moment(); // Assuming the last transaction date is the current date initially
-  let weekNumber = 1;
-
-  while (weekNumber <= 4) {
-    const startDate = lastTransactionDate
-      .clone()
-      .startOf("week")
-      .subtract(1, "day");
-
-    // Adjust end date based on working days
-    const endDate = lastTransactionDate
-      .clone()
-      .endOf("week")
-      .subtract(1, "day")
-      .subtract(workingDays === 7 ? 1 : 0, "days");
-
-    const week = {
-      week: weekNumber,
-      sd: startDate.format("YYYY-MM-DD"),
-      ed: endDate.format("YYYY-MM-DD"),
-    };
-
-    weeks.unshift(week); // Add the week to the beginning of the array
-    weekNumber++;
-
-    lastTransactionDate.subtract(1, "week");
-  }
-
-  return weeks;
-};
-
-// Helper function to generate a report from a week of transactions
-const generateReportFromWeek = (transactions, startDate, endDate) => {
-  const totalJobs = transactions.reduce(
-    (acc, transaction) => acc + transaction.numberOfJobs,
-    0
-  );
-  const totalExpenses = transactions.reduce(
-    (acc, transaction) => acc + transaction.totalAmountPaid,
-    0
-  );
-  const totalAmountMade = transactions.reduce(
-    (acc, transaction) => acc + transaction.totalJobAmount,
-    0
-  );
-
-  return {
-    startDate: startDate.toDate(),
-    endDate: endDate.toDate(),
-    totalJobs,
-    totalExpenses,
-    totalAmountMade,
-  };
 };
 
 const generateMonthlyReport = async (req, res) => {
