@@ -914,7 +914,7 @@ const getTransactionsAndExpenses = async (weeklyReports, userId) => {
 };
 
 const generateWeeklyArray = async (
-  workingDaysPerWeek = 6,
+  workingDaysPerWeek = 7,
   numberOfWeeks = 5,
   currentDate = new Date()
 ) => {
@@ -929,6 +929,7 @@ const generateWeeklyArray = async (
 
     // Calculate the end of the week (Saturday)
     const numberOfDays = workingDaysPerWeek === 6 ? 5 : 6;
+
     let saturdayFromCurrentDate = new Date(mondayFromCurrentDate);
     saturdayFromCurrentDate.setDate(
       mondayFromCurrentDate.getDate() + numberOfDays
@@ -1149,6 +1150,7 @@ const updateAllJobsInTransaction = async (req, res) => {
   const userId = req.user._id;
   const transactionId = req.params.id; // Assuming you're passing the ID in the URL params
   const { markDone, markPaid } = req.body; // Assuming you're sending these parameters in the request body
+
   try {
     // Fetch the transaction from the database
     const transaction = await Transaction.findById({
