@@ -68,4 +68,6 @@ authRoute.put("/update-password", authMiddleware, controller.updatePassword);
 
 authRoute.post("/valid-token", authMiddleware, controller.verifyRefreshToken);
 
+authRoute.get("/download-sample", controller.downloadExcelSample);
+
 module.exports = authRoute;

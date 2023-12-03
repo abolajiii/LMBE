@@ -10,7 +10,9 @@ const moment = require("moment");
 const XLSX = require("xlsx");
 const { paginateResults, paginateExpense } = require("../utils");
 const bcrypt = require("bcrypt");
-const { generateAuthTokens } = require("../helper");
+const { generateAuthTokens, generateSampleExcel } = require("../helper");
+const ExcelJS = require("exceljs");
+const path = require("path");
 
 const handleJob = async (data, userId, client) => {
   try {
@@ -1410,14 +1412,6 @@ const verifyRefreshToken = async (req, res) => {
     // Save the new RefreshToken instance
     await newRefreshToken.save();
 
-    // If both checks pass, the refresh token is valid
-    // console.log("Refresh token is valid", accessToken);
-
-    // // Set the new access token in the response header
-    // res.setHeader("Authorization", `Bearer ${accessToken}`);
-    // // Log the response headers
-    // console.log(res.getHeaders());
-
     // Return a success response
     res.status(200).json({
       message: "Refresh token is valid",
@@ -1427,6 +1421,16 @@ const verifyRefreshToken = async (req, res) => {
   } catch (error) {
     console.error("Error verifying refresh token:", error);
     res.status(500).json({ message: "Internal server error", valid: false });
+  }
+};
+
+const downloadExcelSample = async (req, res) => {
+  try {
+    const filePath = await generateSampleExcel();
+    res.download(filePath, "jobsample.xlsx");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
   }
 };
 
@@ -1456,4 +1460,5 @@ module.exports = {
   verifyPassword,
   updatePassword,
   verifyRefreshToken,
+  downloadExcelSample,
 };
