@@ -332,15 +332,30 @@ const uploadJob = async (req, res) => {
       !data.every(
         (row) =>
           (row.Delivery || row.delivery) &&
-          (row.Amount || row.amount) &&
-          (row.Payer || row.payer)
+          (row.Payer || row.payer) &&
+          (row.Amount || row.amount)
       )
     ) {
       return res.status(400).json({
         error:
-          "Excel file must contain 'Delivery', 'Amount', and 'Payer' columns with non-empty values.",
+          "Excel file must contain 'Delivery', 'Payer', and 'Amount' columns with non-empty values.",
       });
     }
+
+    const mapPayer = (payer) => {
+      const lowerPayer = payer.toLowerCase();
+      if (lowerPayer.includes("pick up") || lowerPayer.includes("pickup")) {
+        return "pick-up";
+      } else if (lowerPayer.includes("vendor")) {
+        return "vendor";
+      } else if (lowerPayer.includes("delivery")) {
+        return "delivery";
+      } else if (lowerPayer === "pick-up") {
+        return "pick-up";
+      }
+      // Handle additional mappings or variations as needed
+      return lowerPayer; // Default to the lowercase payer value
+    };
 
     // Find or create the client based on the user and client name
     let client = await Client.findOne({ user: userId, name: customerName });
@@ -384,7 +399,7 @@ const uploadJob = async (req, res) => {
         pickUp,
         delivery: row.Delivery || row.delivery,
         amount: Number(row.Amount || row.amount) || 0,
-        payer: row.Payer || row.payer,
+        payer: mapPayer(row.Payer || row.payer),
         jobStatus: "pending",
         paymentStatus: "not-paid",
       };
@@ -1049,114 +1064,6 @@ const generateMonthlyReport = async (req, res) => {
   }
 };
 
-const createJobsAndExpenses = async () => {
-  console.log("Running");
-
-  const userId = "65683bd4312811ff3337556d";
-
-  try {
-    const startDate = moment("2023-11-01"); // Change the start date as needed
-    const endDate = moment(); // Current date
-
-    const dateCursor = startDate.clone();
-
-    const jobDataArray = [
-      {
-        customerName: "Kim",
-        pickUp: "Ajah",
-        delivery: [{ location: "Ipaja", amount: 4000, payer: "vendor" }],
-      },
-      // ... (other job data)
-    ];
-
-    while (dateCursor.isSameOrBefore(endDate)) {
-      if (dateCursor.day() !== 0) {
-        const currentDate = dateCursor.format("YYYY-MM-DD");
-        console.log("Running", currentDate);
-
-        const jobData =
-          jobDataArray[
-            (dateCursor.diff(startDate, "days") -
-              dateCursor.diff(startDate.clone().startOf("week"), "days")) %
-              jobDataArray.length
-          ];
-
-        // Create a new transaction for each day
-        const transaction = new Transaction({
-          user: userId,
-          totalJobAmount: 0,
-          numberOfPaidJobs: 0,
-          numberOfJobs: 0,
-          paymentStatus: "paid",
-          totalAmountPaid: 0,
-          jobs: [],
-          createdAt: currentDate,
-        });
-
-        await transaction.save();
-
-        console.log("=============");
-        console.log("Transaction created", currentDate);
-
-        const jobDetails = {
-          transaction: transaction._id,
-          customerName: jobData.customerName,
-          pickUp: jobData.pickUp,
-          amount: 0,
-          payer: "",
-          jobStatus: "done",
-          paymentStatus: "paid",
-          createdAt: moment(currentDate).startOf("day").toDate(), // Set createdAt to the start of the day
-        };
-
-        for (const delivery of jobData.delivery) {
-          jobDetails.delivery = delivery.location;
-          jobDetails.amount = Number(delivery.amount);
-          jobDetails.payer = delivery.payer;
-
-          const job = new Job(jobDetails);
-          await job.save();
-
-          transaction.jobs.push(job._id);
-          transaction.totalJobAmount += jobDetails.amount;
-          transaction.numberOfJobs++;
-          transaction.numberOfPaidJobs++;
-          transaction.paymentStatus = "paid";
-          transaction.totalAmountPaid += jobDetails.amount;
-          await transaction.save();
-        }
-
-        const expenseData = [
-          { expense: "Data", amount: 500 },
-          // Add more expenses as needed
-        ];
-
-        // Create a new daily expense for each day
-        const dailyExpense = new DailyExpense({
-          user: userId,
-          expenses: expenseData,
-          totalAmount: expenseData.reduce(
-            (total, exp) => total + Number(exp.amount),
-            0
-          ),
-          numberOfExpenses: expenseData.length,
-          date: currentDate,
-          createdAt: currentDate,
-        });
-
-        await dailyExpense.save();
-
-        console.log("=============");
-        console.log("Expense created", currentDate);
-      }
-
-      dateCursor.add(1, "day");
-    }
-  } catch (error) {
-    console.error(error);
-  }
-};
-
 const updateAllJobsInTransaction = async (req, res) => {
   const userId = req.user._id;
   const transactionId = req.params.id; // Assuming you're passing the ID in the URL params
@@ -1450,7 +1357,6 @@ module.exports = {
   generateDailyReport,
   getDashboardDetails,
   generateWeeklyReport,
-  createJobsAndExpenses,
   getClients,
   updateAllJobsInTransaction,
   fetchClients,

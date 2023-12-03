@@ -35,7 +35,10 @@ const jobSchema = new mongoose.Schema(
     pickUp: String,
     delivery: String,
     amount: Number,
-    payer: String,
+    payer: {
+      type: String,
+      enum: ["pick-up", "vendor", "delivery"],
+    },
     jobStatus: {
       type: String,
       enum: ["pending", "done", "canceled", "next-day"],
