@@ -66,4 +66,6 @@ authRoute.post("/verify-password", authMiddleware, controller.verifyPassword);
 
 authRoute.put("/update-password", authMiddleware, controller.updatePassword);
 
+authRoute.post("/valid-token", authMiddleware, controller.verifyAccessToken);
+
 module.exports = authRoute;

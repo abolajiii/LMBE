@@ -919,6 +919,8 @@ const generateWeeklyArray = async (
 ) => {
   const weekReports = [];
 
+  console.log(currentDate, "current Date");
+
   for (let week = 1; week <= numberOfWeeks; week++) {
     // Calculate the start of the week (Monday)
     let mondayFromCurrentDate = new Date(currentDate);
@@ -954,10 +956,14 @@ const generateWeeklyArray = async (
 const generateWeeklyReport = async (req, res) => {
   try {
     const allWeeks = await generateWeeklyArray();
+    console.log(allWeeks, "All Weeks");
+
     const transactionAndExpenses = await getTransactionsAndExpenses(
       allWeeks,
       req.user._id
     );
+    console.log(transactionAndExpenses, "transactionAndExpenses");
+
     const newTransactions = transactionAndExpenses.filter(
       (each) => each.numberOfJobs !== 0
     );
@@ -1355,6 +1361,8 @@ const updatePassword = async (req, res) => {
   }
 };
 
+const verifyAccessToken = async (req, res) => {};
+
 module.exports = {
   createJob,
   getAllJobs,
@@ -1380,4 +1388,5 @@ module.exports = {
   updateProfile,
   verifyPassword,
   updatePassword,
+  verifyAccessToken,
 };
