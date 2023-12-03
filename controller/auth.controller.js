@@ -1,8 +1,16 @@
-const { Client, Job, Transaction, DailyExpense, User } = require("../model");
+const {
+  Client,
+  Job,
+  Transaction,
+  DailyExpense,
+  User,
+  RefreshToken,
+} = require("../model");
 const moment = require("moment");
 const XLSX = require("xlsx");
 const { paginateResults, paginateExpense } = require("../utils");
 const bcrypt = require("bcrypt");
+const { generateAuthTokens } = require("../helper");
 
 const handleJob = async (data, userId, client) => {
   try {
@@ -1357,9 +1365,69 @@ const updatePassword = async (req, res) => {
   }
 };
 
-const verifyAccessToken = async (req, res) => {
-  const { refreshToken } = req.body;
-  console.log(refreshToken, "refreshToken");
+const verifyRefreshToken = async (req, res) => {
+  // console.log(req.body.refreshToken);
+
+  // Check if the "Authorization" header is present in the request
+  if (!req.headers.authorization) {
+    return res.status(401).json({ message: "Authorization header missing" });
+  }
+  try {
+    // Step 1: Check if the refresh token exists in the database
+    const existingToken = await RefreshToken.findOne({
+      token: req.body.refreshToken,
+    });
+
+    if (!existingToken) {
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+
+    // Step 2: Check if the refresh token is associated with a valid user
+    const userId = existingToken.user;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    // Step 3: Check if the existing refresh token has expired
+    if (
+      existingToken.expirationDate &&
+      Date.now() >= existingToken.expirationDate
+    ) {
+      return res.status(401).json({ message: "Refresh token has expired" });
+    }
+
+    // Generate tokens
+    const { refreshToken, accessToken } = generateAuthTokens(user);
+
+    // Create a new instance of RefreshToken
+    const newRefreshToken = new RefreshToken({
+      token: refreshToken,
+      user: user._id,
+    });
+
+    // Save the new RefreshToken instance
+    await newRefreshToken.save();
+
+    // If both checks pass, the refresh token is valid
+    // console.log("Refresh token is valid", accessToken);
+
+    // // Set the new access token in the response header
+    // res.setHeader("Authorization", `Bearer ${accessToken}`);
+    // // Log the response headers
+    // console.log(res.getHeaders());
+
+    // Return a success response
+    res.status(200).json({
+      message: "Refresh token is valid",
+      valid: true,
+      token: { refreshToken, accessToken },
+    });
+  } catch (error) {
+    console.error("Error verifying refresh token:", error);
+    res.status(500).json({ message: "Internal server error", valid: false });
+  }
 };
 
 module.exports = {
@@ -1387,5 +1455,5 @@ module.exports = {
   updateProfile,
   verifyPassword,
   updatePassword,
-  verifyAccessToken,
+  verifyRefreshToken,
 };

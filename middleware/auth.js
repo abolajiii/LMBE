@@ -1,35 +1,55 @@
 require("dotenv").config();
+const { jwtDecode } = require("jwt-decode");
+const { User } = require("../model");
+const { RefreshToken } = require("../model"); // Import your RefreshToken model
 
-const jwt = require("jsonwebtoken");
-const { User } = require("../model"); // Import your User model
+// ... (existing code)
 
 const authMiddleware = async (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ error: "Access denied. No token provided." });
-  }
-
   try {
-    const decoded = jwt.verify(token, process.env.MY_AUTH_TOKEN_SECRET_KEY); // Change to your JWT secret
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
-    // Check if the token has expired
+    if (!token) {
+      return res
+        .status(401)
+        .json({ error: "Access denied. No token provided." });
+    }
+
+    const decoded = jwtDecode(token);
     if (Date.now() >= decoded.exp * 1000) {
-      return res.status(401).json({ error: "Token has expired." });
+      const refreshToken = req.body.refreshToken;
+
+      if (refreshToken) {
+        const decodedRefreshToken = jwtDecode(refreshToken);
+
+        if (Date.now() >= decodedRefreshToken.exp * 1000) {
+          return res.status(401).json({ error: "Refresh token has expired." });
+        }
+
+        const existingToken = await RefreshToken.findOne({
+          token: refreshToken,
+          user: decoded.userId,
+        });
+
+        if (!existingToken) {
+          return res.status(401).json({ error: "Invalid refresh token." });
+        }
+
+        req.user = await User.findById(decoded.userId);
+        next();
+      }
+    } else {
+      req.user = await User.findById(decoded.userId);
+      next();
     }
-
-    const user = await User.findById(decoded?.userId);
-
-    if (!user) {
-      return res.status(401).json({ error: "User not found." });
-    }
-
-    req.user = user; // Attach the user object to the request
-    next();
   } catch (error) {
-    res.status(401).json({ error: "Invalid token.", error });
+    console.error(error);
+    // Handle other errors or log them appropriately
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// ... (existing code)
 
 module.exports = { authMiddleware };

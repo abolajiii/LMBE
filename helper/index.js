@@ -12,7 +12,7 @@ const generateAuthTokens = (user) => {
 
   // Generate the authentication token
   const accessToken = jwt.sign(payload, process.env.MY_AUTH_TOKEN_SECRET_KEY, {
-    expiresIn: "1d",
+    expiresIn: "15m",
   });
 
   // Generate the refresh token
