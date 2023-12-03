@@ -1066,23 +1066,23 @@ const generateMonthlyReport = async (req, res) => {
 
 const updateAllJobsInTransaction = async (req, res) => {
   const userId = req.user._id;
-  const transactionId = req.params.id; // Assuming you're passing the ID in the URL params
-  const { markDone, markPaid } = req.body; // Assuming you're sending these parameters in the request body
+  const transactionId = req.params.id;
+  const { markDone, markPaid } = req.body;
 
   try {
-    // Fetch the transaction from the database
     const transaction = await Transaction.findById({
       _id: transactionId,
       user: userId,
-    }).populate("jobs"); // Ensure the 'jobs' field is populated
+    }).populate({
+      path: "jobs",
+      options: { sort: { createdAt: -1 } }, // Sort jobs by createdAt in descending order
+    });
 
     if (!transaction) {
       return res.status(404).json({ error: "Transaction not found" });
     }
 
-    // Check if jobs are already marked as "done" or "paid"
     if (markDone && transaction.jobs.every((job) => job.jobStatus === "done")) {
-      // All jobs are already marked as "done", no need to update
       return res.status(200).json({
         message: "All jobs are already marked as 'done'. No update needed.",
         job: transaction,
@@ -1093,19 +1093,17 @@ const updateAllJobsInTransaction = async (req, res) => {
       markPaid &&
       transaction.jobs.every((job) => job.paymentStatus === "paid")
     ) {
-      // All jobs are already marked as "paid", no need to update
       return res.status(200).json({
         message: "All jobs are already marked as 'paid'. No update needed.",
         job: transaction,
       });
     }
 
-    // Update the job properties based on parameters
     if (markDone) {
       for (const job of transaction.jobs) {
         if (job.jobStatus !== "done") {
           job.jobStatus = "done";
-          await job.save(); // Save each updated job
+          await job.save();
         }
       }
     }
@@ -1114,12 +1112,11 @@ const updateAllJobsInTransaction = async (req, res) => {
       for (const job of transaction.jobs) {
         if (job.paymentStatus !== "paid") {
           job.paymentStatus = "paid";
-          await job.save(); // Save each updated job
+          await job.save();
         }
       }
     }
 
-    // Update transaction properties based on the updated jobs
     transaction.totalAmountPaid = transaction.jobs.reduce(
       (total, job) =>
         job.paymentStatus === "paid" ? total + job.amount : total,
@@ -1133,7 +1130,6 @@ const updateAllJobsInTransaction = async (req, res) => {
         ? "paid"
         : "not-paid";
 
-    // Save the updated transaction
     await transaction.save();
 
     res
