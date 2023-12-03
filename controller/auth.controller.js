@@ -815,7 +815,6 @@ const getBarChartDetails = async (req, res) => {
 
 const getDashboardDetails = async (req, res) => {
   const userId = req.user._id;
-  console.log(userId);
   try {
     // Find all transactions for the user
     const transactions = await Transaction.find({ user: userId });
@@ -914,7 +913,7 @@ const getTransactionsAndExpenses = async (weeklyReports, userId) => {
 };
 
 const generateWeeklyArray = async (
-  workingDaysPerWeek = 7,
+  workingDaysPerWeek = 6,
   numberOfWeeks = 5,
   currentDate = new Date()
 ) => {
