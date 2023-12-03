@@ -1361,7 +1361,10 @@ const updatePassword = async (req, res) => {
   }
 };
 
-const verifyAccessToken = async (req, res) => {};
+const verifyAccessToken = async (req, res) => {
+  const { refreshToken } = req.body;
+  console.log(refreshToken, "refreshToken");
+};
 
 module.exports = {
   createJob,
