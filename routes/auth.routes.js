@@ -70,4 +70,6 @@ authRoute.post("/valid-token", authMiddleware, controller.verifyRefreshToken);
 
 authRoute.get("/download-sample", controller.downloadExcelSample);
 
+authRoute.get("/job/:id/filter", authMiddleware, controller.filterJobs);
+
 module.exports = authRoute;

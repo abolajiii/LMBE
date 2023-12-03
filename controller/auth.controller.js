@@ -6,13 +6,10 @@ const {
   User,
   RefreshToken,
 } = require("../model");
-const moment = require("moment");
 const XLSX = require("xlsx");
 const { paginateResults, paginateExpense } = require("../utils");
 const bcrypt = require("bcrypt");
 const { generateAuthTokens, generateSampleExcel } = require("../helper");
-const ExcelJS = require("exceljs");
-const path = require("path");
 
 const handleJob = async (data, userId, client) => {
   try {
@@ -1337,6 +1334,56 @@ const downloadExcelSample = async (req, res) => {
   }
 };
 
+const filterJobs = async (req, res) => {
+  const id = req.params.id;
+  const page = req.query.page ? parseInt(req.query.page) : 1;
+  const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+  const jobStatusFilter = req.query.jobStatus; // Assuming jobStatus is provided as a query parameter
+
+  try {
+    // Find the transaction by ID and populate the jobs
+    const transaction = await Transaction.findById(id).populate("jobs");
+
+    if (!transaction) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    // Filter jobs based on jobStatus if provided
+    const filteredJobs = jobStatusFilter
+      ? transaction.jobs.filter((job) => job.jobStatus === jobStatusFilter)
+      : transaction.jobs;
+
+    // Paginate the results
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+
+    // Prepare pagination information
+    const totalItems = filteredJobs.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNext = endIndex < totalItems;
+    const hasPrev = startIndex > 0;
+
+    const result = {
+      totalItems,
+      totalPages,
+      currentPage: page,
+      hasNext,
+      hasPrev,
+      itemsInPage: paginatedJobs.length,
+      results: paginatedJobs,
+    };
+
+    // Send the response with the populated data and pagination information
+    return res
+      .status(200)
+      .json({ job: transaction, jobs: result.results, pagination: result });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   createJob,
   getAllJobs,
@@ -1363,4 +1410,5 @@ module.exports = {
   updatePassword,
   verifyRefreshToken,
   downloadExcelSample,
+  filterJobs,
 };
