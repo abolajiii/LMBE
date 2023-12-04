@@ -1384,6 +1384,58 @@ const filterJobs = async (req, res) => {
   }
 };
 
+const filterAllJobs = async (req, res) => {
+  const userId = req.user._id;
+  const page = req.query.page ? parseInt(req.query.page) : 1;
+  const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+  const jobStatusFilter = req.query.paymentStatus; //
+
+  try {
+    // Find the transaction by ID and populate the jobs
+    const transaction = await Transaction.find({
+      user: userId,
+    }).sort({
+      createdAt: -1,
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    // Filter jobs based on jobStatus if provided
+    const filteredJobs = jobStatusFilter
+      ? transaction.filter((job) => job.paymentStatus === jobStatusFilter)
+      : transaction;
+
+    // Paginate the results
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+
+    // Prepare pagination information
+    const totalItems = filteredJobs.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNext = endIndex < totalItems;
+    const hasPrev = startIndex > 0;
+
+    const result = {
+      totalItems,
+      totalPages,
+      currentPage: page,
+      hasNext,
+      hasPrev,
+      itemsInPage: paginatedJobs.length,
+      results: paginatedJobs,
+    };
+
+    // Send the response with the populated data and pagination information
+    return res.status(200).json({ jobs: result.results, pagination: result });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   createJob,
   getAllJobs,
@@ -1411,4 +1463,5 @@ module.exports = {
   verifyRefreshToken,
   downloadExcelSample,
   filterJobs,
+  filterAllJobs,
 };

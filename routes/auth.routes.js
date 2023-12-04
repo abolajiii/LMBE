@@ -72,4 +72,6 @@ authRoute.get("/download-sample", controller.downloadExcelSample);
 
 authRoute.get("/job/:id/filter", authMiddleware, controller.filterJobs);
 
+authRoute.get("/transaction/filter", authMiddleware, controller.filterAllJobs);
+
 module.exports = authRoute;

@@ -3,8 +3,6 @@ const { jwtDecode } = require("jwt-decode");
 const { User } = require("../model");
 const { RefreshToken } = require("../model"); // Import your RefreshToken model
 
-// ... (existing code)
-
 const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
@@ -49,7 +47,5 @@ const authMiddleware = async (req, res, next) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-// ... (existing code)
 
 module.exports = { authMiddleware };
