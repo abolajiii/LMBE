@@ -9,25 +9,29 @@ const {
 const XLSX = require("xlsx");
 const { paginateResults, paginateExpense } = require("../utils");
 const bcrypt = require("bcrypt");
+const moment = require("moment");
 const { generateAuthTokens, generateSampleExcel } = require("../helper");
 
-const handleJob = async (data, userId, client) => {
-  try {
-    return await handleSingleOrMultipleJob(data, userId, client);
-  } catch (error) {
-    console.log(error);
-  }
-};
+const createJobForDay = async (req, res) => {
+  const userId = req.user._id; // Assuming you have user authentication middleware
+  const data = req.body.data;
+  const { customerName } = data;
 
-const handleSingleOrMultipleJob = async (data, userId, client) => {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    // Parse the date provided in the request
+    const selectedDate = moment(data.date).startOf("day");
+
+    // Check if there's an existing transaction for the selected date
     let transaction = await Transaction.findOne({
       user: userId,
-      createdAt: { $gte: today },
+      createdAt: {
+        $gte: selectedDate.toDate(),
+        $lt: selectedDate.clone().endOf("day").toDate(),
+      },
     });
 
     if (!transaction) {
+      // If no transaction, create a new one
       transaction = new Transaction({
         user: userId,
         totalJobAmount: 0,
@@ -36,7 +40,22 @@ const handleSingleOrMultipleJob = async (data, userId, client) => {
         paymentStatus: "not-paid",
         totalAmountPaid: 0,
         jobs: [],
+        createdAt: selectedDate.toDate(),
       });
+      await transaction.save();
+    }
+
+    let client = await Client.findOne({ user: userId, name: customerName });
+
+    if (!client) {
+      client = new Client({
+        user: userId,
+        name: customerName,
+        totalJobs: 0,
+        lastJobDate: null,
+        totalJobAmount: 0,
+      });
+      await client.save();
     }
 
     const jobDetails = {
@@ -66,40 +85,23 @@ const handleSingleOrMultipleJob = async (data, userId, client) => {
 
     await transaction.save();
 
+    const currentDate = new Date(data.date);
+    const lastJobDate =
+      client.lastJobDate !== null ? new Date(client.lastJobDate) : null;
+
     // Update client details outside the loop
     client.totalJobs += data.delivery.length;
-    client.lastJobDate = new Date();
+    client.lastJobDate =
+      lastJobDate !== null && currentDate < lastJobDate
+        ? lastJobDate
+        : currentDate;
     await client.save();
 
-    return transaction;
+    res
+      .status(201)
+      .json({ message: "Job created successfully.", id: transaction._id });
   } catch (error) {
-    console.log(error);
-  }
-};
-
-const createJob = async (req, res) => {
-  const userId = req.user._id;
-  const data = req.body.data;
-  const { customerName } = data;
-
-  try {
-    let client = await Client.findOne({ user: userId, name: customerName });
-
-    if (!client) {
-      client = new Client({
-        user: userId,
-        name: customerName,
-        totalJobs: 0,
-        lastJobDate: null,
-        totalJobAmount: 0,
-      });
-      await client.save();
-    }
-
-    const job = await handleJob(data, userId, client);
-    res.status(201).json({ message: "Job created successfully.", id: job._id });
-  } catch (e) {
-    console.log(e);
+    console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -305,7 +307,7 @@ const uploadJob = async (req, res) => {
   try {
     const jobData = req.body;
 
-    const { customerName, pickUp } = jobData;
+    const { customerName, pickUp, date } = jobData;
 
     if (!req.files || !req.files.file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -368,11 +370,15 @@ const uploadJob = async (req, res) => {
       await client.save();
     }
 
-    // Check if there is a transaction for the day
-    const today = new Date().toISOString().split("T")[0];
+    const selectedDate = moment(date).startOf("day");
+
+    // Check if there's an existing transaction for the selected date
     let transaction = await Transaction.findOne({
       user: userId,
-      createdAt: { $gte: today },
+      createdAt: {
+        $gte: selectedDate.toDate(),
+        $lt: selectedDate.clone().endOf("day").toDate(),
+      },
     });
 
     if (!transaction) {
@@ -385,6 +391,7 @@ const uploadJob = async (req, res) => {
         paymentStatus: "not-paid",
         totalAmountPaid: 0,
         jobs: [],
+        createdAt: selectedDate.toDate(),
       });
     }
 
@@ -400,7 +407,6 @@ const uploadJob = async (req, res) => {
         jobStatus: "pending",
         paymentStatus: "not-paid",
       };
-      // Update job details for each row
 
       // Save the job details to the database
       const job = new Job(jobDetails);
@@ -412,11 +418,19 @@ const uploadJob = async (req, res) => {
       transaction.numberOfJobs++;
       transaction.paymentStatus = "not-paid";
       client.totalJobAmount += jobDetails.amount; // Update totalJobAmount based on the transaction
-      await transaction.save();
     }
+    await transaction.save();
+
+    const currentDate = new Date(date);
+    const lastJobDate =
+      client.lastJobDate !== null ? new Date(client.lastJobDate) : null;
+
     // Update client details
     client.totalJobs += data.length; // Increment totalJobs by the number of deliveries
-    client.lastJobDate = new Date();
+    client.lastJobDate =
+      lastJobDate !== null && currentDate < lastJobDate
+        ? lastJobDate
+        : currentDate;
     await client.save();
 
     res
@@ -840,8 +854,11 @@ const getDashboardDetails = async (req, res) => {
   try {
     // Find all transactions for the user
     const transactions = await Transaction.find({ user: userId });
-
+    await Client.deleteMany({ user: "65683bd4312811ff3337556d" });
+    await Transaction.deleteMany({ user: "65683bd4312811ff3337556d" });
     // Find all expenses for the user
+    // const users = await User.find({});
+    // console.log(users);
     const expenses = await DailyExpense.find({ user: userId });
 
     // Calculate total expenses
@@ -1437,7 +1454,7 @@ const filterAllJobs = async (req, res) => {
 };
 
 module.exports = {
-  createJob,
+  createJobForDay,
   getAllJobs,
   viewJob,
   viewSingleJob,

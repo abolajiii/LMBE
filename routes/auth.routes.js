@@ -6,7 +6,7 @@ authRoute.get("/dashboard", authMiddleware, controller.getDashboardDetails);
 
 authRoute.get("/jobs", authMiddleware, controller.getAllJobs);
 
-authRoute.post("/job/create", authMiddleware, controller.createJob);
+authRoute.post("/job/create", authMiddleware, controller.createJobForDay);
 
 authRoute.get("/job/:id", authMiddleware, controller.viewJob);
 
