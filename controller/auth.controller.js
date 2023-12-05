@@ -854,11 +854,7 @@ const getDashboardDetails = async (req, res) => {
   try {
     // Find all transactions for the user
     const transactions = await Transaction.find({ user: userId });
-    // await Client.deleteMany({ user: "65683bd4312811ff3337556d" });
-    // await Transaction.deleteMany({ user: "65683bd4312811ff3337556d" });
-    // Find all expenses for the user
-    // const users = await User.find({});
-    // console.log(users);
+
     const expenses = await DailyExpense.find({ user: userId });
 
     // Calculate total expenses

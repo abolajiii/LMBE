@@ -52,7 +52,7 @@ const generateSampleExcel = async () => {
   worksheet.addRow({ delivery: "yaba", payer: "delivery", amount: 2000 });
   // Add more rows as needed
 
-  const filePath = path.join(__dirname, "sample.xlsx");
+  const filePath = path.join(__dirname, "jobsample.xlsx");
   await workbook.xlsx.writeFile(filePath);
 
   return filePath;
