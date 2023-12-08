@@ -438,6 +438,7 @@ const uploadJob = async (req, res) => {
       .json({ message: "Jobs uploaded successfully", id: transaction._id });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ error });
   }
 };
 
