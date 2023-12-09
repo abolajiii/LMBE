@@ -519,7 +519,7 @@ const createExpense = async (req, res) => {
 
 const deleteDailyExpense = async (req, res) => {
   const userId = req.user._id;
-  const dailyExpenseId = req.params.dailyExpenseId;
+  const dailyExpenseId = req.params.expenseId;
 
   try {
     // Find the DailyExpense by ID
