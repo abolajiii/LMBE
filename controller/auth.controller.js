@@ -522,8 +522,8 @@ const deleteDailyExpense = async (req, res) => {
   const dailyExpenseId = req.params.expenseId;
 
   try {
-    // Find the DailyExpense by ID
-    const dailyExpense = await DailyExpense.findOne({
+    // Find the DailyExpense by ID and delete it
+    const dailyExpense = await DailyExpense.findByIdAndDelete({
       user: userId,
       _id: dailyExpenseId,
     });
@@ -532,15 +532,8 @@ const deleteDailyExpense = async (req, res) => {
       return res.status(404).json({ error: "DailyExpense not found" });
     }
 
-    // Capture the deleted expenses before removing them
-    const deletedExpenses = dailyExpense.expenses;
-
-    // Remove the DailyExpense
-    await dailyExpense.remove();
-
     res.status(200).json({
-      message: "DailyExpense and associated expenses deleted successfully",
-      deletedExpenses,
+      message: "Expense deleted successfully",
     });
   } catch (error) {
     console.log(error);
