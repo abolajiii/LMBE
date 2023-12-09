@@ -500,9 +500,9 @@ const createExpense = async (req, res) => {
 
       const newDailyExpense = await DailyExpense.create({
         user: userId,
-        expenses: expenses,
-        totalAmount: totalAmount,
-        numberOfExpenses: numberOfExpenses,
+        expenses,
+        totalAmount,
+        numberOfExpenses,
         date: today,
       });
 
@@ -511,6 +511,37 @@ const createExpense = async (req, res) => {
         id: newDailyExpense._id,
       });
     }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error });
+  }
+};
+
+const deleteDailyExpense = async (req, res) => {
+  const userId = req.user._id;
+  const dailyExpenseId = req.params.dailyExpenseId;
+
+  try {
+    // Find the DailyExpense by ID
+    const dailyExpense = await DailyExpense.findOne({
+      user: userId,
+      _id: dailyExpenseId,
+    });
+
+    if (!dailyExpense) {
+      return res.status(404).json({ error: "DailyExpense not found" });
+    }
+
+    // Capture the deleted expenses before removing them
+    const deletedExpenses = dailyExpense.expenses;
+
+    // Remove the DailyExpense
+    await dailyExpense.remove();
+
+    res.status(200).json({
+      message: "DailyExpense and associated expenses deleted successfully",
+      deletedExpenses,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error });
@@ -856,7 +887,9 @@ const getDashboardDetails = async (req, res) => {
     // Find all transactions for the user
     const transactions = await Transaction.find({ user: userId });
 
-    const expenses = await DailyExpense.find({ user: userId });
+    const expenses = await DailyExpense.find({
+      user: userId,
+    });
 
     // Calculate total expenses
     const totalExpenses = expenses.reduce(
@@ -1478,4 +1511,5 @@ module.exports = {
   downloadExcelSample,
   filterJobs,
   filterAllJobs,
+  deleteDailyExpense,
 };

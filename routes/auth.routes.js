@@ -30,6 +30,12 @@ authRoute.post("/expense/create", authMiddleware, controller.createExpense);
 
 authRoute.get("/expense/:id", authMiddleware, controller.viewExpense);
 
+authRoute.delete(
+  "/expense/:expenseId",
+  authMiddleware,
+  controller.deleteDailyExpense
+);
+
 authRoute.get(
   "/generate/daily",
   authMiddleware,
