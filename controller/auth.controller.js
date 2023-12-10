@@ -641,177 +641,374 @@ const calculateMonthlyReport = async (req, res) => {
   }
 };
 
-const getData = async (userId) => {
-  const today = new Date().toISOString().split("T")[0];
-
-  const todayExpenses = await DailyExpense.find({
-    user: userId,
-    createdAt: { $gte: today },
-  });
-
-  const todayTransactions = await Transaction.find({
-    user: userId,
-    createdAt: { $gte: today },
-  });
-
-  if (todayTransactions.length === 0) {
-    const yesterdayData = await getYesterdayData(userId, today);
-    return {
-      yesterdayData,
-      todayData: {
-        returns: 0,
-        expenses: 0,
-        numberOfJobs: 0,
-      },
-    };
-  }
-
-  const yesterdayData = await getYesterdayData(userId, today);
-
-  const todayData = {
-    date:
-      todayTransactions.length > 0
-        ? todayTransactions[0].createdAt.toISOString().split("T")[0]
-        : null,
-    returns: todayTransactions.reduce(
-      (total, transaction) => total + transaction.totalAmountPaid,
-      0
-    ),
-    expenses: todayExpenses.reduce(
-      (total, expense) => total + expense.totalAmount,
-      0
-    ),
-    numberOfJobs: todayTransactions.reduce(
-      (totalJobs, transaction) => totalJobs + transaction.numberOfJobs,
-      0
-    ),
-  };
-
-  return { yesterdayData, todayData };
-};
-
-const getYesterdayData = async (userId, today) => {
-  const lastTransaction = await Transaction.findOne({
-    user: userId,
-    createdAt: { $lt: today },
-  }).sort({ createdAt: -1 });
-
-  if (!lastTransaction) {
-    return {};
-  }
-
-  const yesterdayExpenses = await DailyExpense.find({
-    user: userId,
-    createdAt: {
-      $gte: lastTransaction.createdAt.toISOString().split("T")[0],
-      $lt: today,
-    },
-  });
-
-  const yesterdayData = {
-    date: lastTransaction.createdAt,
-    returns: lastTransaction.totalAmountPaid,
-    expenses: yesterdayExpenses.reduce(
-      (total, expense) => total + expense.totalAmount,
-      0
-    ),
-    numberOfJobs: lastTransaction.numberOfJobs,
-  };
-
-  return yesterdayData;
-};
-
 const generateDailyReport = async (req, res) => {
+  const userId = req.user._id;
   try {
-    const userId = req.user._id;
-    const { yesterdayData, todayData } = await getData(userId);
+    const report = await getDailyTransaction(userId);
 
-    const report = [];
+    const presentJob =
+      report.length > 0 &&
+      report[0].numberOfJobs > 0 &&
+      report[0].returns === 0;
 
-    if (yesterdayData && Object.keys(yesterdayData).length > 0) {
-      report.push({ date: yesterdayData.date, ...yesterdayData });
+    const noJobReport = report.length > 0 && report[0].numberOfJobs === 0;
+
+    if (noJobReport || report.length === 0) {
+      return res.status(200).json({ report: "No report for the day ✍️" });
     }
 
-    if (todayData && Object.keys(todayData).length > 0) {
-      report.push({ date: todayData.date, ...todayData });
+    if (presentJob) {
+      return res
+        .status(200)
+        .json({ report: "Get paid! Before generating report ✍️" });
     }
 
-    const comparisonNote = getComparisonNote(
-      yesterdayData || {},
-      todayData || {}
-    );
-
-    res.status(200).json({ report, comparisonNote });
+    if (report.length > 0) {
+      const comparisonNote = await getComparisonNotes(report);
+      return res.status(200).json({ report, comparisonNote });
+    }
   } catch (error) {
-    console.error(error);
+    console.error("Error in dailyReport:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-const getComparisonNote = (yesterdayData, todayData) => {
-  const positiveSentences = [
-    "Way to go! Your financial performance today is outstanding.",
-    "You've done a fantastic job with your returns. Keep it up!",
-    "Impressive! Today's financial results are excellent.",
-    "Superb effort! Your returns today are truly remarkable.",
-    "Amazing work on optimizing your spending. Your financial health is great.",
-    "Brilliant job! Your positive financial trend continues today.",
-    "Wonderful! Keep up the terrific work on your returns and expenses.",
-    "Great job managing your finances today. Your efforts are paying off.",
-    "Your financial performance is outstanding. You're on the right track.",
-    "Today's financial results are superb. Keep the momentum going!",
-  ];
+const getDailyTransaction = async (userId) => {
+  try {
+    const today = new Date();
 
-  const negativeSentences = [
-    "Today's financial data is concerning. Let's work on optimizing your spending.",
-    "It's a bit alarming. Your returns today are not as expected. Let's analyze.",
-    "Worrisome news. Your financial performance today is not up to the mark.",
-    "Disappointing results today. We need to address your financial strategy.",
-    "Today's financial data is troubling. Let's identify areas for improvement.",
-    "Unsettling news. Your returns today are not meeting the desired targets.",
-    "Disturbing trends in today's financial data. We need to reassess your strategy.",
-    "Unfortunately, today's financial performance is not as expected. Let's analyze why.",
-    "Regrettable news. Your returns and expenses today are not in sync with the goals.",
-    "Dismal results today. It's time to revisit your financial strategy and make adjustments.",
-  ];
+    // Fetch transactions for today
+    const todayTransaction = await Transaction.findOne({
+      createdAt: {
+        $gte: today.setHours(0, 0, 0, 0),
+        $lt: today.setHours(23, 59, 59, 999),
+      },
+      user: userId,
+    });
 
-  let selectedSentence;
+    const todayExpenses = await DailyExpense.findOne({
+      user: userId,
+      createdAt: {
+        $gte: today.setHours(0, 0, 0, 0),
+        $lt: today.setHours(23, 59, 59, 999),
+      },
+    });
 
-  // Check if keys are found in both yesterdayData and todayData
-  const yesterdayKeys = Object.keys(yesterdayData);
-  const todayKeys = Object.keys(todayData);
+    // Fetch the latest transaction before today
+    const latestTransactionBeforeToday = await Transaction.findOne({
+      createdAt: { $lt: today.setHours(0, 0, 0, 0) },
+      user: userId,
+    }).sort({ createdAt: -1 });
 
-  if (yesterdayKeys.length > 0 && todayKeys.length > 0) {
-    const returnsDifference = todayData.returns - yesterdayData.returns;
-    const expensesDifference = todayData.expenses - yesterdayData.expenses;
+    const latestExpensesBeforeToday = await DailyExpense.findOne({
+      user: userId,
+      createdAt: { $lt: today.setHours(0, 0, 0, 0) },
+    });
 
-    if (returnsDifference > 0) {
-      if (returnsDifference > 1000 || expensesDifference > 0) {
-        selectedSentence = getRandomElement(positiveSentences);
-      } else {
-        selectedSentence = "Neutral comparison message";
-      }
-    } else {
-      selectedSentence = getRandomElement(negativeSentences);
-    }
-  } else {
-    // If keys are not found in either yesterdayData or todayData
-    const dataWithKeys = yesterdayKeys.length > 0 ? yesterdayData : todayData;
+    const formatDate = (date) => date.toISOString().split("T")[0];
 
-    // Check if returns are greater than expenses
-    if (dataWithKeys.returns > dataWithKeys.expenses) {
-      selectedSentence = getRandomElement(positiveSentences);
-    } else {
-      selectedSentence = getRandomElement(negativeSentences);
-    }
+    const todayData = todayTransaction && {
+      date: formatDate(today),
+      returns: todayTransaction.totalAmountPaid,
+      expenses: todayExpenses !== null ? todayExpenses.totalAmount : 0,
+
+      numberOfJobs: todayTransaction.numberOfJobs,
+    };
+
+    const latestData = latestTransactionBeforeToday && {
+      date: formatDate(latestTransactionBeforeToday.createdAt),
+      returns: latestTransactionBeforeToday.totalAmountPaid,
+      expenses:
+        latestExpensesBeforeToday !== null
+          ? latestExpensesBeforeToday.totalAmount
+          : 0,
+      numberOfJobs: latestTransactionBeforeToday.numberOfJobs,
+    };
+
+    return [todayData, latestData].filter(Boolean);
+  } catch (error) {
+    console.error("Error fetching daily transactions:", error);
+    throw error;
   }
-
-  return selectedSentence;
 };
 
-const getRandomElement = (array) => {
-  const randomIndex = Math.floor(Math.random() * array.length);
-  return array[randomIndex];
+const getComparisonNotes = (data) => {
+  const getRandomElement = (array) => {
+    const randomIndex = Math.floor(Math.random() * array.length);
+    return array[randomIndex];
+  };
+  // Positive sentences for returns
+  const positiveSentencesReturns = [
+    "Your returns are outstanding today!",
+    "Impressive performance on your returns.",
+    "Great job maximizing your returns.",
+    "You've achieved remarkable returns.",
+    "Exceptional financial returns today!",
+    "Your returns are higher than expected.",
+    "Superb effort on your returns.",
+    "Well done on optimizing your financial returns.",
+    "Fantastic job managing your returns.",
+    "You're excelling in financial returns today.",
+    "Brilliant returns! Keep up the good work.",
+    "Outstanding financial performance!",
+    "You've done exceptionally well with returns.",
+    "Impressive returns today. Keep it up!",
+    "Exceptional work on your financial returns.",
+    "Great returns! You're on the right track.",
+    "Your returns are truly remarkable today.",
+    "Amazing performance in financial returns.",
+    "Excellent job maximizing your returns.",
+    "You've achieved impressive returns today.",
+  ];
+
+  // Negative sentences for returns
+  const negativeSentencesReturns = [
+    "Returns today are below expectations.",
+    "Let's work on improving your returns.",
+    "There's room for improvement in returns.",
+    "Returns today need some attention.",
+    "Your returns are lower than anticipated.",
+    "We can enhance returns with adjustments.",
+    "Improvement needed in financial returns.",
+    "Today's returns are not meeting goals.",
+    "Let's analyze and improve your returns.",
+    "There's a shortfall in financial returns.",
+    "Returns today are not as expected.",
+    "We need to address issues in returns.",
+    "Today's returns are concerning.",
+    "Your returns need careful consideration.",
+    "We can optimize returns for better results.",
+    "Financial returns require adjustment.",
+    "We should review and improve returns.",
+    "Returns today are falling short.",
+    "Let's reassess the strategy for returns.",
+    "Financial returns could be improved.",
+  ];
+
+  // Neutral sentences for returns
+  const neutralSentencesReturns = [
+    "Steady returns today.",
+    "Returns are consistent.",
+    "No significant change in returns.",
+    "Today's returns are stable.",
+    "Returns are in line with expectations.",
+    "There's a balance in financial returns.",
+    "Consistent performance in returns.",
+    "Today's returns show stability.",
+    "Financial returns remain steady.",
+    "No major fluctuations in returns.",
+    "Returns are holding steady.",
+    "Stable financial returns observed today.",
+    "Consistent results in financial returns.",
+    "Today's returns are maintaining stability.",
+    "Financial returns are unchanged.",
+    "Steady progress in returns.",
+    "No drastic changes in returns today.",
+    "Returns remain constant.",
+    "Stability seen in financial returns.",
+    "Today's returns show a consistent trend.",
+  ];
+
+  // Positive sentences for expenses
+  const positiveSentencesExpenses = [
+    "You've managed expenses exceptionally well today!",
+    "Impressive control over expenses.",
+    "Great job optimizing your spending!",
+    "You've done a fantastic job with expenses.",
+    "Exceptional expense management today!",
+    "Your expenses are lower than expected.",
+    "Superb effort on managing expenses.",
+    "Well done on optimizing your spending.",
+    "Fantastic job managing your expenses.",
+    "You're excelling in expense management today.",
+    "Brilliant work on your expenses! Keep it up.",
+    "Outstanding performance in expense management!",
+    "You've done exceptionally well with expenses.",
+    "Impressive expenses today. Keep it up!",
+    "Exceptional work on managing your expenses.",
+    "Great job! Your spending is well-controlled.",
+    "Your expenses are truly remarkable today.",
+    "Amazing performance in managing expenses.",
+    "Excellent job optimizing your spending.",
+    "You've achieved impressive expense management today.",
+  ];
+
+  // Negative sentences for expenses
+  const negativeSentencesExpenses = [
+    "Expenses today are higher than expected.",
+    "Let's review and optimize your expenses.",
+    "Expense management needs attention today.",
+    "Today's expenses are not meeting goals.",
+    "Let's work on improving your spending.",
+    "Improvement needed in expense management.",
+    "Today's expenses are not as expected.",
+    "We need to address issues in expenses.",
+    "Today's spending is concerning.",
+    "Your expenses need careful consideration.",
+    "There's room for improvement in expenses.",
+    "We should review and improve spending.",
+    "Today's expenses are troubling.",
+    "Your spending needs careful review.",
+    "We can optimize expenses for better results.",
+    "Spending today requires adjustment.",
+    "We should reassess the strategy for expenses.",
+    "Today's expenses could be improved.",
+    "There's a shortfall in expense management.",
+    "Let's analyze and improve your spending.",
+  ];
+
+  // Neutral sentences for expenses
+  const neutralSentencesExpenses = [
+    "Steady expenses today.",
+    "Expenses are consistent.",
+    "No significant change in expenses.",
+    "Today's expenses are stable.",
+    "Expenses are in line with expectations.",
+    "There's a balance in spending.",
+    "Consistent performance in expenses.",
+    "Today's spending shows stability.",
+    "Expenses remain steady.",
+    "No major fluctuations in spending.",
+    "Spending is holding steady.",
+    "Stable performance in expenses observed today.",
+    "Consistent results in spending.",
+    "Today's expenses are maintaining stability.",
+    "Spending is unchanged.",
+    "Steady progress in expenses.",
+    "No drastic changes in expenses today.",
+    "Expenses remain constant.",
+    "Stability seen in spending.",
+    "Today's expenses show a consistent trend.",
+  ];
+
+  // Positive sentences for number of jobs
+  const positiveSentencesJobs = [
+    "You've successfully handled multiple jobs today!",
+    "Impressive number of jobs managed today.",
+    "Great job on efficiently handling jobs!",
+    "You've done an outstanding job with the number of jobs.",
+    "Exceptional job management today!",
+    "The number of jobs today exceeds expectations.",
+    "Superb effort on managing jobs.",
+    "Well done on efficiently handling jobs.",
+    "Fantastic job in job management today.",
+    "You're excelling in handling jobs today.",
+    "Brilliant work on your jobs! Keep it up.",
+    "Outstanding performance in job management!",
+    "You've done exceptionally well with the number of jobs.",
+    "Impressive job management today. Keep it up!",
+    "Exceptional work on managing the number of jobs.",
+    "Great job! Your job management is commendable.",
+    "The number of jobs today is truly remarkable.",
+    "Amazing performance in managing jobs.",
+    "Excellent job in optimizing job management.",
+    "You've achieved impressive job management today.",
+  ];
+
+  // Negative sentences for number of jobs
+  const negativeSentencesJobs = [
+    "The number of jobs today is lower than expected.",
+    "Let's focus on increasing the number of jobs.",
+    "There's room for improvement in job management.",
+    "Today's number of jobs needs attention.",
+    "The number of jobs is lower than anticipated.",
+    "We can enhance job management with adjustments.",
+    "Improvement needed in the number of jobs.",
+    "Today's job management is not meeting goals.",
+    "Let's analyze and improve the number of jobs.",
+    "There's a shortfall in job management.",
+    "The number of jobs today is not as expected.",
+    "We need to address issues in job management.",
+    "Today's job management is concerning.",
+    "The number of jobs needs careful consideration.",
+    "We can optimize job management for better results.",
+    "Job management today requires adjustment.",
+    "We should reassess the strategy for job management.",
+    "Today's number of jobs could be improved.",
+    "There's a shortfall in job management.",
+    "Let's analyze and improve the number of jobs.",
+  ];
+
+  // Neutral sentences for number of jobs
+  const neutralSentencesJobs = [
+    "Steady number of jobs today.",
+    "The number of jobs is consistent.",
+    "No significant change in the number of jobs.",
+    "Today's number of jobs is stable.",
+    "The number of jobs is in line with expectations.",
+    "There's a balance in job management.",
+    "Consistent performance in the number of jobs.",
+    "Today's job management shows stability.",
+    "The number of jobs remains steady.",
+    "No major fluctuations in the number of jobs.",
+    "Job management is holding steady.",
+    "Stable performance in the number of jobs observed today.",
+    "Consistent results in job management.",
+    "Today's number of jobs is maintaining stability.",
+    "Job management is unchanged.",
+    "Steady progress in the number of jobs.",
+    "No drastic changes in the number of jobs today.",
+    "The number of jobs remains constant.",
+    "Stability seen in job management.",
+    "Today's number of jobs shows a consistent trend.",
+  ];
+
+  if (data.length === 1) {
+    const returnSentence = getRandomElement(positiveSentencesReturns);
+    const expensesSentence = getRandomElement(positiveSentencesExpenses);
+    const jobsSentence = getRandomElement(positiveSentencesJobs);
+
+    const selectedSentence = {
+      returns: returnSentence,
+      expenses: expensesSentence,
+      numberOfJobs: jobsSentence,
+    };
+
+    return selectedSentence;
+  } else {
+    const {
+      returns: returns1,
+      expenses: expenses1,
+      numberOfJobs: numberOfJobs1,
+    } = data[0] || {};
+
+    const {
+      returns: returns2,
+      expenses: expenses2,
+      numberOfJobs: numberOfJobs2,
+    } = data[1] || {};
+
+    const returnSentence =
+      returns1 > returns2
+        ? getRandomElement(positiveSentencesReturns)
+        : returns1 === returns2
+        ? getRandomElement(neutralSentencesReturns)
+        : getRandomElement(negativeSentencesReturns);
+
+    // Compare expenses
+    const expensesSentence =
+      expenses1 > expenses2
+        ? getRandomElement(negativeSentencesExpenses)
+        : expenses1 === expenses2
+        ? getRandomElement(neutralSentencesExpenses)
+        : getRandomElement(positiveSentencesExpenses);
+
+    // Compare number of jobs
+    const jobsSentence =
+      numberOfJobs1 > numberOfJobs2
+        ? getRandomElement(positiveSentencesJobs)
+        : numberOfJobs1 === numberOfJobs2
+        ? getRandomElement(neutralSentencesJobs)
+        : getRandomElement(negativeSentencesJobs);
+
+    const selectedSentence = {
+      returns: returnSentence,
+      expenses: expensesSentence,
+      numberOfJobs: jobsSentence,
+    };
+
+    return selectedSentence;
+  }
 };
 
 const getBarChartDetails = async (req, res) => {
