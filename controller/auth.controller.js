@@ -22,11 +22,13 @@ const createJobForDay = async (req, res) => {
     const selectedDate = moment(data.date).startOf("day");
 
     // Check if there's an existing transaction for the selected date
+    const createdAt = selectedDate.clone().endOf("day").toDate();
+
     let transaction = await Transaction.findOne({
       user: userId,
       createdAt: {
         $gte: selectedDate.toDate(),
-        $lt: selectedDate.clone().endOf("day").toDate(),
+        $lt: createdAt,
       },
     });
 
@@ -40,7 +42,7 @@ const createJobForDay = async (req, res) => {
         paymentStatus: "not-paid",
         totalAmountPaid: 0,
         jobs: [],
-        createdAt: selectedDate.toDate(),
+        createdAt: createdAt,
       });
       await transaction.save();
     }
@@ -66,6 +68,7 @@ const createJobForDay = async (req, res) => {
       payer: "",
       jobStatus: "pending",
       paymentStatus: "not-paid",
+      createdAt: selectedDate.toDate(),
     };
 
     for (const delivery of data.delivery) {
@@ -181,8 +184,6 @@ const updateJob = async (req, res) => {
   const data = req.body.data;
   const userId = req.user._id;
 
-  // console.log(data);
-
   try {
     const job = await Job.findById(jobId);
 
@@ -199,7 +200,7 @@ const updateJob = async (req, res) => {
     // Find the associated transaction for the specific date
     let transaction = await Transaction.findOne({
       user: userId,
-      createdAt: { $lte: specificDate },
+      createdAt: { $gte: specificDate },
     });
 
     if (transaction && data.paymentStatus) {
@@ -376,12 +377,14 @@ const uploadJob = async (req, res) => {
 
     const selectedDate = moment(date).startOf("day");
 
+    const createdAt = selectedDate.clone().endOf("day").toDate();
+
     // Check if there's an existing transaction for the selected date
     let transaction = await Transaction.findOne({
       user: userId,
       createdAt: {
         $gte: selectedDate.toDate(),
-        $lt: selectedDate.clone().endOf("day").toDate(),
+        $lt: createdAt,
       },
     });
 
@@ -395,7 +398,7 @@ const uploadJob = async (req, res) => {
         paymentStatus: "not-paid",
         totalAmountPaid: 0,
         jobs: [],
-        createdAt: selectedDate.toDate(),
+        createdAt,
       });
     }
 
@@ -410,6 +413,7 @@ const uploadJob = async (req, res) => {
         payer: mapPayer(row.Payer || row.payer),
         jobStatus: "pending",
         paymentStatus: "not-paid",
+        createdAt,
       };
 
       // Save the job details to the database
