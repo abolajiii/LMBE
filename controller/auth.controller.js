@@ -181,6 +181,8 @@ const updateJob = async (req, res) => {
   const data = req.body.data;
   const userId = req.user._id;
 
+  // console.log(data);
+
   try {
     const job = await Job.findById(jobId);
 
@@ -197,7 +199,7 @@ const updateJob = async (req, res) => {
     // Find the associated transaction for the specific date
     let transaction = await Transaction.findOne({
       user: userId,
-      createdAt: { $gte: specificDate },
+      createdAt: { $lte: specificDate },
     });
 
     if (transaction && data.paymentStatus) {
@@ -210,11 +212,11 @@ const updateJob = async (req, res) => {
 
       // Check if the previous payment status was "paid" and the new data is not "paid"
       if (previousPaymentStatus === "paid" && data.paymentStatus !== "paid") {
+        console.log("not-paid");
         // Decrease the totalAmountPaid and numberOfPaidJobs
         transaction.totalAmountPaid -= job.amount;
         transaction.numberOfPaidJobs -= 1;
       }
-
       // Update paymentStatus based on the numberOfPaidJobs
       transaction.paymentStatus =
         transaction.numberOfPaidJobs === transaction.numberOfJobs
@@ -224,6 +226,8 @@ const updateJob = async (req, res) => {
       // Save the updated transaction
       await transaction.save();
     }
+
+    // return;
 
     // Update the job with the new data
     job.set(data);

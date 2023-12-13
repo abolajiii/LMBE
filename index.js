@@ -46,18 +46,18 @@ app.use("/api/v1/", authRoute);
 app.use("/api/v1/", noAuthRoute);
 
 const newDnd = async () => {
-  // const user = await User.find({});
+  const user = await User.find({});
   // console.log(user);
   // await DailyExpense.deleteMany({
   // user: "65683bd4312811ff3337556d",
   // });
-  await DailyExpense.deleteMany({ user: "6569c1c0e61f2a962f1b31e4" });
-  await Job.deleteMany({ user: "6569c1c0e61f2a962f1b31e4" });
+  await DailyExpense.deleteMany({ user: "65683bd4312811ff3337556d" });
+  await Job.deleteMany({ user: "65683bd4312811ff3337556d" });
   await Client.deleteMany({
-    user: "6569c1c0e61f2a962f1b31e4",
+    user: "65683bd4312811ff3337556d",
   });
-  await Transaction.deleteMany({ user: "6569c1c0e61f2a962f1b31e4" });
-  await RefreshToken.deleteMany({ user: "6569c1c0e61f2a962f1b31e4" });
+  await Transaction.deleteMany({ user: "65683bd4312811ff3337556d" });
+  await RefreshToken.deleteMany({ user: "65683bd4312811ff3337556d" });
   //   const data = {
   //     username: "dev",
   //     email: "dev@dev.com",
