@@ -34,6 +34,10 @@ const loginUser = async (userInfo) => {
       throw new Error("Invalid username or email");
     }
 
+    user.lastActive = new Date();
+
+    await user.save();
+
     return user;
   } catch (error) {
     throw error;
@@ -78,7 +82,7 @@ const signInUser = async (req, res) => {
 
   try {
     const user = await loginUser(userData);
-    console.log(user);
+    // console.log(user);
 
     // Update the user's "last active" timestamp in the database
     // await User.findByIdAndUpdate(user._id, { lastActive: currentTime });
