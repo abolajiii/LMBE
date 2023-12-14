@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
     businessType: String,
     location: String,
     phoneNumber: String,
+    lastActive: Date,
     openingBalance: { type: Number, default: 0 },
     transactions: [
       {
@@ -17,7 +18,7 @@ const userSchema = new mongoose.Schema(
         ref: "Transaction",
       },
     ],
-    role: String, // You can define specific roles like "admin" or "user"
+    role: [String], // You can define specific roles like "admin" or "user"
   },
   { timestamps: true }
 );

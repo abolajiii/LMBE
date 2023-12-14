@@ -10,6 +10,7 @@ const {
 } = require("./model");
 
 const authRoute = require("./routes/auth.routes");
+const adminAuthRoute = require("./routes/admin.routes");
 const noAuthRoute = require("./routes/no.auth.routes");
 
 const cron = require("node-cron");
@@ -44,9 +45,12 @@ mongoose
 
 app.use("/api/v1/", authRoute);
 app.use("/api/v1/", noAuthRoute);
+app.use("/api/v1/admin/", adminAuthRoute);
 
 const newDnd = async () => {
-  const user = await User.find({});
+  const user = await User.find({
+    user: "65683bd4312811ff3337556d",
+  });
   // console.log(user);
   // await DailyExpense.deleteMany({
   // user: "65683bd4312811ff3337556d",
@@ -68,6 +72,56 @@ const newDnd = async () => {
   //   console.log(response);
   // await createJobsAndExpenses();
 };
+
+const updateUsersLastActive = async () => {
+  try {
+    // Find all users
+    const users = await User.find();
+
+    // Update each user's lastActive to createdAt
+    await Promise.all(
+      users.map(async (user) => {
+        user.lastActive = user.createdAt;
+        await user.save();
+      })
+    );
+
+    console.log("Users lastActive updated successfully.");
+  } catch (error) {
+    console.error("Error updating users lastActive:", error);
+  }
+};
+
+// updateUsersLastActive();
+
+const setAdminToUser = async () => {
+  try {
+    // Find all users
+    const users = await User.find({});
+
+    // Loop through users
+    for (const user of users) {
+      // Check if the username is "admin"
+      if (user.username === "admin") {
+        // Set role to "admin" for the user with username "admin"
+        user.role = ["admin", "user"];
+      } else {
+        // Set role to "user" for all other users
+        user.role = ["user"];
+      }
+
+      // Save the updated user
+      await user.save();
+    }
+
+    console.log("Roles updated successfully");
+  } catch (error) {
+    console.error("Error updating roles:", error);
+  }
+};
+
+// Call the function
+// setAdminToUser();
 
 // newDnd();
 
