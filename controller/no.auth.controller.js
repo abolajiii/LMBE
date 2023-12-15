@@ -114,9 +114,11 @@ const signInUser = async (req, res) => {
     res.json({
       user: {
         ...user._doc,
+        transactions,
         totalAmount: totalTransactions,
         createdAt: user.createdAt,
         plan: user.plan,
+        multipleCount: user.multipleCount,
       },
       token: { refreshToken, accessToken },
     });

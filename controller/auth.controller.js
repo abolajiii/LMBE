@@ -17,18 +17,32 @@ const createJobForDay = async (req, res) => {
   const data = req.body.data;
   const { customerName } = data;
 
+  // Retrieve user information (assuming you have a User model)
+  const user = await User.findById(userId);
+
+  const formatDate = (date) => date.split("T")[0];
+
+  // Increment user.multipleCount if user is on the free plan and there are multiple deliveries
+  if (user.plan === "free" && data.delivery.length > 1) {
+    if (!user.multipleCount) {
+      user.multipleCount = 0;
+      await user.save();
+    }
+
+    if (user.multipleCount <= 2) {
+      // Allow creating jobs if multipleCount is 0
+      user.multipleCount++;
+      await user.save();
+    } else {
+      return res.status(400).json({ error: "Please upgrade current plan" });
+    }
+  }
+
   try {
-    // Parse the date provided in the request
-    const selectedDate = moment(data.date).startOf("day");
-
-    // Check if there's an existing transaction for the selected date
-    const createdAt = selectedDate.clone().endOf("day").toDate();
-
     let transaction = await Transaction.findOne({
       user: userId,
       createdAt: {
-        $gte: selectedDate.toDate(),
-        $lt: createdAt,
+        $gte: formatDate(data.date),
       },
     });
 
@@ -42,7 +56,7 @@ const createJobForDay = async (req, res) => {
         paymentStatus: "not-paid",
         totalAmountPaid: 0,
         jobs: [],
-        createdAt: createdAt,
+        createdAt: data.date,
       });
       await transaction.save();
     }
@@ -68,7 +82,7 @@ const createJobForDay = async (req, res) => {
       payer: "",
       jobStatus: "pending",
       paymentStatus: "not-paid",
-      createdAt: selectedDate.toDate(),
+      createdAt: data.date,
     };
 
     for (const delivery of data.delivery) {

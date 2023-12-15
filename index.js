@@ -84,9 +84,9 @@ const setAdminToUser = async () => {
     // Loop through users
     for (const user of users) {
       // Check if the username is "admin"
-      if (user.username === "aquad") {
+      if (!user.multipleCount) {
         // Set role to "admin" for the user with username "admin"
-        user.plan = "weekly";
+        user.multipleCount = 0;
       }
 
       // Save the updated user
