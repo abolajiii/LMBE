@@ -98,23 +98,23 @@ const setAdminToUser = async () => {
   try {
     // Find all users
     const users = await User.find({});
-    // console.log(users);
-    // await User.findByIdAndDelete("657b98aee778e86973325832");
+    // await User.findByIdAndDelete("657b99bff156f4472172fb96");
+    console.log(users);
 
     // Loop through users
-    for (const user of users) {
-      // Check if the username is "admin"
-      if (user.username === "admin") {
-        // Set role to "admin" for the user with username "admin"
-        user.role = ["admin", "user"];
-      } else {
-        user.role = ["user"];
-        // Set role to "user" for all other users
-      }
+    // for (const user of users) {
+    //   // Check if the username is "admin"
+    //   if (user.username === "admin") {
+    //     // Set role to "admin" for the user with username "admin"
+    //     user.role = ["admin", "user"];
+    //   } else {
+    //     user.role = ["user"];
+    //     // Set role to "user" for all other users
+    //   }
 
-      // Save the updated user
-      await user.save();
-    }
+    //   // Save the updated user
+    //   await user.save();
+    // }
 
     console.log("Roles updated successfully");
   } catch (error) {

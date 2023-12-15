@@ -45,7 +45,7 @@ const loginUser = async (userInfo) => {
 };
 
 const createNewUser = async (user) => {
-  const { username, email, password, businessName, location } = user;
+  const { username, email, password, businessName, location, state } = user;
 
   try {
     // // Check if the user already exists
@@ -67,6 +67,7 @@ const createNewUser = async (user) => {
       businessName,
       location,
       openingBalance: 0,
+      state,
       role: ["user"],
     });
 
