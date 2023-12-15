@@ -73,25 +73,6 @@ const newDnd = async () => {
   // await createJobsAndExpenses();
 };
 
-const updateUsersLastActive = async () => {
-  try {
-    // Find all users
-    const users = await User.find();
-
-    // Update each user's lastActive to createdAt
-    await Promise.all(
-      users.map(async (user) => {
-        user.lastActive = user.createdAt;
-        await user.save();
-      })
-    );
-
-    console.log("Users lastActive updated successfully.");
-  } catch (error) {
-    console.error("Error updating users lastActive:", error);
-  }
-};
-
 // updateUsersLastActive();
 
 const setAdminToUser = async () => {
@@ -99,22 +80,19 @@ const setAdminToUser = async () => {
     // Find all users
     const users = await User.find({});
     // await User.findByIdAndDelete("657ba2b3b421ed75304bca30");
-    console.log(users);
 
     // Loop through users
-    // for (const user of users) {
-    //   // Check if the username is "admin"
-    //   if (user.username === "admin") {
-    //     // Set role to "admin" for the user with username "admin"
-    //     user.role = ["admin", "user"];
-    //   } else {
-    //     user.role = ["user"];
-    //     // Set role to "user" for all other users
-    //   }
+    for (const user of users) {
+      // Check if the username is "admin"
+      if (user.username === "aquad") {
+        // Set role to "admin" for the user with username "admin"
+        user.plan = "weekly";
+      }
 
-    //   // Save the updated user
-    //   await user.save();
-    // }
+      // Save the updated user
+      await user.save();
+    }
+    // console.log(users);
 
     console.log("Roles updated successfully");
   } catch (error) {
@@ -123,7 +101,7 @@ const setAdminToUser = async () => {
 };
 
 // Call the function
-setAdminToUser();
+// setAdminToUser();
 
 // newDnd();
 

@@ -116,6 +116,7 @@ const signInUser = async (req, res) => {
         ...user._doc,
         totalAmount: totalTransactions,
         createdAt: user.createdAt,
+        plan: user.plan,
       },
       token: { refreshToken, accessToken },
     });

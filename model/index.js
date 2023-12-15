@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
     location: String,
     phoneNumber: String,
     lastActive: Date,
+    workingDays: Number,
     openingBalance: { type: Number, default: 0 },
     transactions: [
       {
