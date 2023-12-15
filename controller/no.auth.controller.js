@@ -67,6 +67,7 @@ const createNewUser = async (user) => {
       businessName,
       location,
       openingBalance: 0,
+      role: ["user"],
     });
 
     await newUser.save();
@@ -200,9 +201,8 @@ const signUpUser = async (req, res) => {
 
     // Send the welcome email
     await sendWelcomeEmail(newUser);
-    console.log(user);
     res.json({
-      user,
+      user: newUser,
       token: { refreshToken, accessToken },
     });
   } catch (error) {

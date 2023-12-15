@@ -98,6 +98,8 @@ const setAdminToUser = async () => {
   try {
     // Find all users
     const users = await User.find({});
+    // console.log(users);
+    // await User.findByIdAndDelete("657b98aee778e86973325832");
 
     // Loop through users
     for (const user of users) {
@@ -106,8 +108,8 @@ const setAdminToUser = async () => {
         // Set role to "admin" for the user with username "admin"
         user.role = ["admin", "user"];
       } else {
-        // Set role to "user" for all other users
         user.role = ["user"];
+        // Set role to "user" for all other users
       }
 
       // Save the updated user
