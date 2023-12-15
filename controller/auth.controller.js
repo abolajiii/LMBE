@@ -1234,7 +1234,7 @@ const generateWeeklyArray = async (
 
 const generateWeeklyReport = async (req, res) => {
   try {
-    const allWeeks = await generateWeeklyArray();
+    const allWeeks = await generateWeeklyArray(req.user.workingDays);
 
     const transactionAndExpenses = await getTransactionsAndExpenses(
       allWeeks,
