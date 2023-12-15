@@ -1,46 +1,90 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Welcome to Logistics Manager</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system;
+      }
+      header {
+        background-color: #343a40;
+        color: #fff;
+        text-align: center;
+        padding: 20px;
+      }
+      main {
+        padding: 20px;
+        max-width: 600px;
+        margin: auto;
+      }
+      footer {
+        background-color: #343a40;
+        color: #fff;
+        text-align: center;
+        padding: 10px;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+      li {
+        margin-bottom: 10px;
+      }
+      li img {
+        margin-right: 10px;
+        vertical-align: middle;
+      }
+    </style>
   </head>
   <body>
-    <h2>Welcome to Logistics Manager</h2>
-    <p>Hi <%= user.username %>,</p>
-    <p>
-      Welcome to our platform! Logistics Manager is here to help you efficiently
-      manage your business logistics, transactions, and clients. We offer a
-      range of services to streamline your operations and enhance your logistics
-      management experience.
-    </p>
-    <p>With Logistics Manager, you can:</p>
-    <ul>
-      <li>Track and manage your business transactions.</li>
-      <li>Access detailed reports to gain insights into your operations.</li>
-      <li>Manage your expenses and financial records with ease.</li>
-      <li>
-        Stay connected with your clients and provide them with excellent
-        service.
-      </li>
-    </ul>
-    <p>
-      We're here to support you every step of the way. If you have any questions
-      or need assistance, please feel free to reach out to our dedicated support
-      team at
-      <a href="mailto:no_reply@adeajayiabolaji.com"
-        >no_reply@adeajayiabolaji.com</a
-      >.
-    </p>
-    <p>Thank you for choosing Logistics Manager!</p>
+    <header>
+      <h1>Welcome to Logistics Manager</h1>
+    </header>
+
+    <main>
+      <p>Hi <%= user.username %>,</p>
+
+      <p>
+        Welcome to the Logistics Manager family! We're thrilled to have you on
+        board as we embark on a journey to revolutionize your logistics
+        management. Get ready for a seamless experience as you navigate through
+        our powerful features designed to simplify and elevate your logistics
+        operations.
+      </p>
+
+      <p>With Logistics Manager, you can:</p>
+
+      <ul>
+        <li>Create single or multiple jobs effortlessly</li>
+        <li>Upload job details using Excel for ultimate convenience</li>
+        <li>Manage your expenses with ease</li>
+        <li>
+          Gain valuable insights with detailed reports on job activity, returns,
+          and expenses
+        </li>
+        <li>
+          Track the number of jobs and predict top clients for repeat jobs
+        </li>
+        <li>Create backdated jobs with full control</li>
+        <li>Stay on top of your business with monthly activity charts</li>
+      </ul>
+
+      <p>
+        Your logistics journey is about to become smoother, more intuitive, and
+        empowering. If you ever have questions or need assistance, our dedicated
+        support team is just an email away at
+        <a href="mailto:no_reply@adeajayiabolaji.com"
+          >no_reply@adeajayiabolaji.com</a
+        >. Thank you for choosing Logistics Manager – where we simplify
+        logistics to elevate your business!
+      </p>
+    </main>
 
     <!-- Footer -->
-    <table style="background-color: #343a40; width: 100%; text-align: center">
-      <tr>
-        <td style="padding: 10px">
-          <p style="color: #fff">
-            © 2023 Logistics Manager. All rights reserved.
-          </p>
-        </td>
-      </tr>
-    </table>
+    <footer>
+      <p>&copy; 2023 Logistics Manager. All rights reserved.</p>
+    </footer>
   </body>
 </html>

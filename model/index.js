@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema(
         ref: "Transaction",
       },
     ],
+    plan: { type: String, default: "free" },
     role: [String], // You can define specific roles like "admin" or "user"
   },
   { timestamps: true }

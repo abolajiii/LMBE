@@ -98,7 +98,7 @@ const setAdminToUser = async () => {
   try {
     // Find all users
     const users = await User.find({});
-    // await User.findByIdAndDelete("657b99bff156f4472172fb96");
+    // await User.findByIdAndDelete("657ba2b3b421ed75304bca30");
     console.log(users);
 
     // Loop through users
@@ -123,7 +123,7 @@ const setAdminToUser = async () => {
 };
 
 // Call the function
-// setAdminToUser();
+setAdminToUser();
 
 // newDnd();
 

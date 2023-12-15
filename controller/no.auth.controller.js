@@ -21,8 +21,6 @@ const loginUser = async (userInfo) => {
       $or: [{ username: emailOrUsername }, { email: emailOrUsername }],
     });
 
-    console.log(user);
-
     if (!user) {
       throw new Error("Invalid username or email");
     }
@@ -69,6 +67,7 @@ const createNewUser = async (user) => {
       openingBalance: 0,
       state,
       role: ["user"],
+      plan: "free",
     });
 
     await newUser.save();
@@ -113,7 +112,11 @@ const signInUser = async (req, res) => {
     );
 
     res.json({
-      user: { ...user._doc, totalAmount: totalTransactions },
+      user: {
+        ...user._doc,
+        totalAmount: totalTransactions,
+        createdAt: user.createdAt,
+      },
       token: { refreshToken, accessToken },
     });
   } catch (error) {
