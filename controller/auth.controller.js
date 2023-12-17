@@ -1325,72 +1325,82 @@ const updateAllJobsInTransaction = async (req, res) => {
   const transactionId = req.params.id;
   const { markDone, markPaid } = req.body;
 
+  const page = 1;
+  const pageSize = 10;
   try {
-    const transaction = await Transaction.findById({
-      _id: transactionId,
-      user: userId,
-    }).populate({
+    // Find the transaction by ID with pagination
+    const transaction = await Transaction.findById(transactionId).populate({
       path: "jobs",
-      options: { sort: { createdAt: -1 } }, // Sort jobs by createdAt in descending order
+      options: {
+        sort: { createdAt: -1 },
+      },
     });
 
-    if (!transaction) {
+    if (!transaction || transaction.user.toString() !== userId.toString()) {
       return res.status(404).json({ error: "Transaction not found" });
     }
 
-    if (markDone && transaction.jobs.every((job) => job.jobStatus === "done")) {
-      return res.status(200).json({
-        message: "All jobs are already marked as 'done'. No update needed.",
-        job: transaction,
-      });
-    }
-
-    if (
-      markPaid &&
-      transaction.jobs.every((job) => job.paymentStatus === "paid")
-    ) {
-      return res.status(200).json({
-        message: "All jobs are already marked as 'paid'. No update needed.",
-        job: transaction,
-      });
-    }
-
+    // Update jobs in the transaction based on conditions
     if (markDone) {
-      for (const job of transaction.jobs) {
-        if (job.jobStatus !== "done") {
-          job.jobStatus = "done";
-          await job.save();
-        }
-      }
+      await Job.updateMany(
+        { transaction: transactionId },
+        { $set: { jobStatus: "done" } }
+      );
     }
 
     if (markPaid) {
-      for (const job of transaction.jobs) {
-        if (job.paymentStatus !== "paid") {
-          job.paymentStatus = "paid";
-          await job.save();
-        }
-      }
+      await Job.updateMany(
+        { transaction: transactionId },
+        { $set: { paymentStatus: "paid" } }
+      );
     }
 
-    transaction.totalAmountPaid = transaction.jobs.reduce(
+    // Fetch the updated transaction with populated jobs and pagination
+    const updatedTransaction = await Transaction.findById(
+      transactionId
+    ).populate({
+      path: "jobs",
+      options: {
+        sort: { createdAt: -1 },
+      },
+    });
+
+    // Update transaction properties based on updated jobs
+    updatedTransaction.totalAmountPaid = updatedTransaction.jobs.reduce(
       (total, job) =>
         job.paymentStatus === "paid" ? total + job.amount : total,
       0
     );
-    transaction.numberOfPaidJobs = transaction.jobs.filter(
+    updatedTransaction.numberOfPaidJobs = updatedTransaction.jobs.filter(
       (job) => job.paymentStatus === "paid"
     ).length;
-    transaction.paymentStatus =
-      transaction.numberOfPaidJobs === transaction.numberOfJobs
+    updatedTransaction.paymentStatus =
+      updatedTransaction.numberOfPaidJobs === updatedTransaction.jobs.length
         ? "paid"
         : "not-paid";
 
-    await transaction.save();
+    await updatedTransaction.save();
 
-    res
-      .status(200)
-      .json({ message: "Transaction updated successfully", job: transaction });
+    // Pagination information
+    const totalItems = updatedTransaction.jobs.length;
+
+    const results = updatedTransaction.jobs.slice(0, 10);
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const hasNext = (page - 1) * pageSize + pageSize < totalItems;
+    const hasPrev = (page - 1) * pageSize > 0;
+
+    res.status(200).json({
+      message: "Jobs updated successfully!",
+      job: updatedTransaction,
+      jobs: results,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        hasNext,
+        hasPrev,
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });

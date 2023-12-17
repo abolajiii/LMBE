@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+const casual = require("casual");
 const {
   User,
   DailyExpense,
@@ -48,64 +48,135 @@ app.use("/api/v1/", noAuthRoute);
 app.use("/api/v1/admin/", adminAuthRoute);
 
 const newDnd = async () => {
-  const user = await User.find({
-    user: "65683bd4312811ff3337556d",
+  const user = await User.findOne({
+    username: "mike",
   });
-  // console.log(user);
-  // await DailyExpense.deleteMany({
-  // user: "65683bd4312811ff3337556d",
-  // });
-  await DailyExpense.deleteMany({ user: "65683bd4312811ff3337556d" });
-  await Job.deleteMany({ user: "65683bd4312811ff3337556d" });
+
+  await DailyExpense.deleteMany({ user: user._id });
+  await Job.deleteMany({ user: user._id });
   await Client.deleteMany({
-    user: "65683bd4312811ff3337556d",
+    user: user._id,
   });
-  await Transaction.deleteMany({ user: "65683bd4312811ff3337556d" });
-  await RefreshToken.deleteMany({ user: "65683bd4312811ff3337556d" });
-  //   const data = {
-  //     username: "dev",
-  //     email: "dev@dev.com",
-  //     password: "Admin12345!",
-  //     businessName: "aquad-errands",
-  //   };˜
-  //   const response = await registerUser(data);
-  //   console.log(response);
-  // await createJobsAndExpenses();
+  await Transaction.deleteMany({ user: user._id });
+  await RefreshToken.deleteMany({ user: user._id });
+
+  console.log("done");
 };
 
-// updateUsersLastActive();
+const generateMockData = async () => {
+  const user = await User.findOne({ username: "mike" });
+  const userId = user._id; // Replace with the actual user ID
+  const startDate = new Date("2023-12-01");
+  const endDate = new Date(); // Today's date
 
-const setAdminToUser = async () => {
-  try {
-    // Find all users
-    const users = await User.find({});
-    // await User.findByIdAndDelete("657ba2b3b421ed75304bca30");
+  // Generate a constant set of 20 clients
+  const clients = [];
+  for (let j = 0; j < 20; j++) {
+    const clientName = casual.first_name;
+    clients.push(clientName);
+  }
 
-    // Loop through users
-    for (const user of users) {
-      // Check if the username is "admin"
-      if (!user.multipleCount) {
-        // Set role to "admin" for the user with username "admin"
-        user.multipleCount = 0;
+  for (let i = new Date(startDate); i <= endDate; i.setDate(i.getDate() + 1)) {
+    const date = i.toISOString();
+
+    // Check if a transaction already exists for the day
+    let transaction = await Transaction.findOne({
+      user: userId,
+      createdAt: {
+        $gte: date,
+        $lt: new Date(i.getTime() + 86400000).toISOString(), // Adding 86400000 milliseconds (24 hours) to get the next day
+      },
+    });
+
+    if (!transaction) {
+      // If no transaction, create a new one
+      transaction = new Transaction({
+        user: userId,
+        totalJobAmount: 0,
+        numberOfPaidJobs: 0,
+        numberOfJobs: 0,
+        paymentStatus: "not-paid",
+        totalAmountPaid: 0,
+        jobs: [],
+        createdAt: date,
+      });
+      await transaction.save();
+    }
+
+    //   // Generate jobs for each client
+    for (const clientName of clients) {
+      // Check if the client already exists
+      let client = await Client.findOne({ user: userId, name: clientName });
+
+      if (!client) {
+        // If no client, create a new one
+        client = new Client({
+          user: userId,
+          name: clientName,
+          totalJobs: 0,
+          lastJobDate: null,
+          totalJobAmount: 0,
+        });
+        await client.save();
       }
 
-      // Save the updated user
-      await user.save();
-    }
-    // console.log(users);
+      //     // Generate at least 8 jobs for each client
+      const jobCount = Math.max(3, Math.floor(Math.random() * 6));
+      for (let k = 0; k < jobCount; k++) {
+        const jobDetails = {
+          transaction: transaction._id,
+          customerName: clientName,
+          pickUp: casual.city,
+          amount: casual.integer((from = 1000), (to = 5000)),
+          payer: casual.random_element(["pick-up", "delivery", "vendor"]),
+          jobStatus: "pending",
+          paymentStatus: "not-paid",
+          createdAt: date,
+          delivery: casual.city,
+        };
 
-    console.log("Roles updated successfully");
-  } catch (error) {
-    console.error("Error updating roles:", error);
+        const job = new Job(jobDetails);
+        await job.save();
+
+        transaction.jobs.push(job._id);
+        transaction.totalJobAmount += jobDetails.amount;
+        transaction.numberOfJobs++;
+        transaction.paymentStatus = "not-paid";
+        client.totalJobAmount += jobDetails.amount;
+
+        await transaction.save();
+
+        console.log({ job, client });
+
+        await transaction.save();
+
+        // Update client details outside the loop
+      }
+
+      const currentDate = new Date(date);
+      const lastJobDate =
+        client.lastJobDate !== null ? new Date(client.lastJobDate) : null;
+      client.totalJobs += jobCount;
+      client.lastJobDate =
+        lastJobDate !== null && currentDate < lastJobDate
+          ? lastJobDate
+          : currentDate;
+      await client.save();
+    }
   }
 };
 
-// Call the function
-// setAdminToUser();
-
 // newDnd();
 
-// getWeeklyReport();
-// createJobsAndExpenses();
+// Call the function to generate mock data
+// generateMockData()
+//   .then(() => {
+//     console.log("Mock data created successfully");
+//     process.exit(0);
+//   })
+//   .catch((error) => {
+//     console.error("Error creating mock data:", error);
+//     process.exit(1);
+//   });
 
 app.listen(PORT, console.log(`PORT ${PORT}`));
