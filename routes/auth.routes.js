@@ -18,28 +18,137 @@ authRoute.get("/", async (req, res) => {
 });
 
 authRoute.post("/", async (req, res) => {
-  const eventData = req.body;
-  const eventType = eventData.event;
+  const eventData = req.body.data;
+  const eventType = req.body.event;
 
   switch (eventType) {
     case "charge.success":
-      console.log("Handling charge success event:", eventData.data);
-      // Add your logic for handling charge success event
+      console.log("Charge successful:", eventData);
+      // Add logic for successful charge handling
       break;
 
-    case "subscription.cancel":
-      console.log("Handling subscription cancellation event:", eventData.data);
-      // Add your logic for handling subscription cancellation event
+    case "charge.dispute.create":
+      console.log("Dispute created:", eventData);
+      // Add logic for dispute creation handling
       break;
 
-    // Add more cases for other events as needed
+    case "charge.dispute.remind":
+      console.log("Dispute reminder:", eventData);
+      // Add logic for dispute reminder handling
+      break;
+
+    case "charge.dispute.resolve":
+      console.log("Dispute resolved:", eventData);
+      // Add logic for dispute resolution handling
+      break;
+
+    case "customeridentification.failed":
+      console.log("Customer ID validation failed:", eventData);
+      // Add logic for customer ID validation failure handling
+      break;
+
+    case "customeridentification.success":
+      console.log("Customer ID validation successful:", eventData);
+      // Add logic for customer ID validation success handling
+      break;
+
+    case "dedicatedaccount.assign.failed":
+      console.log("DVA assign failed:", eventData);
+      // Add logic for DVA assign failure handling
+      break;
+
+    case "dedicatedaccount.assign.success":
+      console.log("DVA assign success:", eventData);
+      // Add logic for DVA assign success handling
+      break;
+
+    case "invoice.create":
+      console.log("Invoice created:", eventData);
+      // Add logic for invoice creation handling
+      break;
+
+    case "invoice.payment_failed":
+      console.log("Invoice payment failed:", eventData);
+      // Add logic for invoice payment failure handling
+      break;
+
+    case "invoice.update":
+      console.log("Invoice updated:", eventData);
+      // Add logic for invoice update handling
+      break;
+
+    case "paymentrequest.pending":
+      console.log("Payment request pending:", eventData);
+      // Add logic for payment request pending handling
+      break;
+
+    case "paymentrequest.success":
+      console.log("Payment request success:", eventData);
+      // Add logic for payment request success handling
+      break;
+
+    case "refund.failed":
+      console.log("Refund failed:", eventData);
+      // Add logic for refund failure handling
+      break;
+
+    case "refund.pending":
+      console.log("Refund pending:", eventData);
+      // Add logic for refund pending handling
+      break;
+
+    case "refund.processed":
+      console.log("Refund processed:", eventData);
+      // Add logic for refund processed handling
+      break;
+
+    case "refund.processing":
+      console.log("Refund processing:", eventData);
+      // Add logic for refund processing handling
+      break;
+
+    case "subscription.create":
+      console.log("Subscription created:", eventData);
+      // Add logic for subscription creation handling
+      break;
+
+    case "subscription.disable":
+      console.log("Subscription disabled:", eventData);
+      // Add logic for subscription disable handling
+      break;
+
+    case "subscription.expiring_cards":
+      console.log("Subscription expiring cards:", eventData);
+      // Add logic for subscription expiring cards handling
+      break;
+
+    case "subscription.not_renew":
+      console.log("Subscription not renewing:", eventData);
+      // Add logic for subscription not renewing handling
+      break;
+
+    case "transfer.failed":
+      console.log("Transfer failed:", eventData);
+      // Add logic for transfer failure handling
+      break;
+
+    case "transfer.success":
+      console.log("Transfer success:", eventData);
+      // Add logic for transfer success handling
+      break;
+
+    case "transfer.reversed":
+      console.log("Transfer reversed:", eventData);
+      // Add logic for transfer reversed handling
+      break;
 
     default:
-      console.log("Unknown event type:", eventType);
-    // Handle unknown event type
+      console.log(`Unhandled event type: ${eventType}`);
+      // Handle unhandled event types
+      break;
   }
 
-  res.status(200).send("Waiting for stack!");
+  res.status(200).send("Event handled successfully!");
 });
 
 authRoute.get("/dashboard", authMiddleware, controller.getDashboardDetails);
@@ -127,12 +236,12 @@ authRoute.post("/subscribe", authMiddleware, controller.handleSubscription);
 authRoute.post("/paystack-webhook", (req, res) => {
   const payload = JSON.stringify(req.body);
   const signature = req.headers["x-paystack-signature"];
-  console.log({ payload, signature });
+  console.log();
 
   if (verifyPaystackWebhook(payload, signature)) {
     // Signature is valid, process the webhook event
     const event = req.body;
-    console.log("Received Paystack webhook event:", event);
+    console.log("Received Paystack webhook event:");
 
     // Add your logic to update your app based on the webhook event
   } else {
