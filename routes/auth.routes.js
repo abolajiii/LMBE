@@ -18,6 +18,7 @@ authRoute.get("/", async (req, res) => {
 });
 
 authRoute.post("/", async (req, res) => {
+  console.log("Hello");
   res.status(200).send("Waiting for stack!");
 });
 
