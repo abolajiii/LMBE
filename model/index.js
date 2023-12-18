@@ -32,6 +32,11 @@ const User = mongoose.model("User", userSchema);
 // Define the Job model
 const jobSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Replace with the actual model name for users
+      required: true,
+    },
     transaction: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Transaction",

@@ -83,6 +83,7 @@ const createJobForDay = async (req, res) => {
       jobStatus: "pending",
       paymentStatus: "not-paid",
       createdAt: data.date,
+      user: user._id,
     };
 
     for (const delivery of data.delivery) {
@@ -227,7 +228,6 @@ const updateJob = async (req, res) => {
 
       // Check if the previous payment status was "paid" and the new data is not "paid"
       if (previousPaymentStatus === "paid" && data.paymentStatus !== "paid") {
-        console.log("not-paid");
         // Decrease the totalAmountPaid and numberOfPaidJobs
         transaction.totalAmountPaid -= job.amount;
         transaction.numberOfPaidJobs -= 1;
@@ -428,6 +428,7 @@ const uploadJob = async (req, res) => {
         jobStatus: "pending",
         paymentStatus: "not-paid",
         createdAt,
+        user: userId,
       };
 
       // Save the job details to the database
@@ -1705,6 +1706,50 @@ const filterAllJobs = async (req, res) => {
   }
 };
 
+const getFrequentPickUp = async (req, res) => {
+  const userId = req.user._id;
+
+  const daysThreshold = 17;
+
+  const numberOfCount = 2;
+
+  try {
+    const currentDate = new Date();
+    const startDate = new Date(currentDate);
+    startDate.setDate(startDate.getDate() - daysThreshold);
+
+    const result = await Job.aggregate([
+      {
+        $match: {
+          user: userId, // Assuming there's a user field in your Job model
+          createdAt: { $gte: startDate, $lte: currentDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            customerName: "$customerName",
+            pickUp: "$pickUp",
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $match: {
+          count: { $gt: numberOfCount - 1 }, // Adjust this threshold as needed
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      frequentPickUp: result,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   createJobForDay,
   getAllJobs,
@@ -1734,4 +1779,5 @@ module.exports = {
   filterJobs,
   filterAllJobs,
   deleteDailyExpense,
+  getFrequentPickUp,
 };

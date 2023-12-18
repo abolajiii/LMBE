@@ -80,4 +80,6 @@ authRoute.get("/job/:id/filter", authMiddleware, controller.filterJobs);
 
 authRoute.get("/transaction/filter", authMiddleware, controller.filterAllJobs);
 
+authRoute.get("/pick-up", authMiddleware, controller.getFrequentPickUp);
+
 module.exports = authRoute;

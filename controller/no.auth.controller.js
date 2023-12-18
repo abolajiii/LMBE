@@ -221,10 +221,8 @@ const signUpUser = async (req, res) => {
 const verifyEmail = async (req, res) => {
   // Extract the email from the request body
   const { email } = req.body;
-  console.log(email);
   // Generate a random OTP
   const otp = await generateOtp();
-  console.log(otp);
 
   // Check if the email exists in your database (pseudocode)
   const user = await User.findOne({ email });

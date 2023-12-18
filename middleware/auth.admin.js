@@ -21,7 +21,6 @@ const checkUserAndVerifyAdmin = async (req, res, next) => {
     }
 
     req.user = user;
-    console.log(user);
 
     // Check if the user is an admin
     if (user.role.includes("admin")) {

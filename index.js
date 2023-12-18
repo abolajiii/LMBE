@@ -64,14 +64,14 @@ const newDnd = async () => {
 };
 
 const generateMockData = async () => {
-  const user = await User.findOne({ username: "mike" });
+  const user = await User.findOne({ username: "kim" });
   const userId = user._id; // Replace with the actual user ID
   const startDate = new Date("2023-12-01");
   const endDate = new Date(); // Today's date
 
   // Generate a constant set of 20 clients
   const clients = [];
-  for (let j = 0; j < 20; j++) {
+  for (let j = 0; j < 10; j++) {
     const clientName = casual.first_name;
     clients.push(clientName);
   }
@@ -121,7 +121,7 @@ const generateMockData = async () => {
       }
 
       //     // Generate at least 8 jobs for each client
-      const jobCount = Math.max(3, Math.floor(Math.random() * 6));
+      const jobCount = Math.max(3, Math.floor(Math.random() * 4));
       for (let k = 0; k < jobCount; k++) {
         const jobDetails = {
           transaction: transaction._id,
@@ -133,6 +133,7 @@ const generateMockData = async () => {
           paymentStatus: "not-paid",
           createdAt: date,
           delivery: casual.city,
+          user: userId,
         };
 
         const job = new Job(jobDetails);
@@ -146,7 +147,9 @@ const generateMockData = async () => {
 
         await transaction.save();
 
-        console.log({ job, client });
+        console.log(
+          `Day -${date}, JobCount - ${jobCount}, Client -${clientName}, Pick up -${jobDetails.pickUp}`
+        );
 
         await transaction.save();
 
@@ -165,6 +168,56 @@ const generateMockData = async () => {
     }
   }
 };
+
+const getPickUpFrequency = async (daysThreshold = 17, numberOfCount = 3) => {
+  const user = await User.findOne({
+    username: "mike",
+  });
+
+  const userId = user._id;
+
+  try {
+    const currentDate = new Date();
+    const startDate = new Date(currentDate);
+    startDate.setDate(startDate.getDate() - daysThreshold);
+
+    const result = await Job.aggregate([
+      {
+        $match: {
+          user: userId, // Assuming there's a user field in your Job model
+          createdAt: { $gte: startDate, $lte: currentDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            customerName: "$customerName",
+            pickUp: "$pickUp",
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $match: {
+          count: { $gt: numberOfCount - 1 }, // Adjust this threshold as needed
+        },
+      },
+    ]);
+
+    return result;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+// getPickUpFrequency()
+//   .then((res) => {
+//     console.log("Pick-up frequency:", res);
+//   })
+//   .catch((error) => {
+//     console.error("Error frequency", error);
+//   });
 
 // newDnd();
 
