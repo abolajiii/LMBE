@@ -24,6 +24,20 @@ authRoute.post("/", async (req, res) => {
 
   switch (eventType) {
     case "charge.success":
+      // Extract relevant data from the Paystack event
+      const userEmail = eventData.customer.email;
+      const paymentInterval = eventData.plan.interval;
+
+      // Map Paystack plan intervals to your plan values
+      const planMapping = {
+        monthly: "monthly",
+        annually: "yearly",
+        // Add more mappings if needed
+      };
+
+      // Determine the subscribed plan based on the Paystack event
+      const subscribedPlan = planMapping[paymentInterval] || "free";
+
       try {
         const user = await User.findOne({ email: userEmail });
 
