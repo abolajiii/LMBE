@@ -27,9 +27,9 @@ authRoute.post("/", async (req, res) => {
       // Add your logic for handling charge success event
       break;
 
-    case "another.event":
-      console.log("Handling another event:", eventData.data);
-      // Add your logic for handling another event
+    case "subscription.cancel":
+      console.log("Handling subscription cancellation event:", eventData.data);
+      // Add your logic for handling subscription cancellation event
       break;
 
     // Add more cases for other events as needed
