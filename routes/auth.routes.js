@@ -18,7 +18,8 @@ authRoute.get("/", async (req, res) => {
 });
 
 authRoute.post("/", async (req, res) => {
-  console.log("Hello");
+  console.log(req.body);
+  console.log(req);
   res.status(200).send("Waiting for stack!");
 });
 
@@ -107,6 +108,7 @@ authRoute.post("/subscribe", authMiddleware, controller.handleSubscription);
 authRoute.post("/paystack-webhook", (req, res) => {
   const payload = JSON.stringify(req.body);
   const signature = req.headers["x-paystack-signature"];
+  console.log({ payload, signature });
 
   if (verifyPaystackWebhook(payload, signature)) {
     // Signature is valid, process the webhook event
