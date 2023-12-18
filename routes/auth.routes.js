@@ -18,7 +18,27 @@ authRoute.get("/", async (req, res) => {
 });
 
 authRoute.post("/", async (req, res) => {
-  console.log(req.body);
+  const eventData = req.body;
+  const eventType = eventData.event;
+
+  switch (eventType) {
+    case "charge.success":
+      console.log("Handling charge success event:", eventData.data);
+      // Add your logic for handling charge success event
+      break;
+
+    case "another.event":
+      console.log("Handling another event:", eventData.data);
+      // Add your logic for handling another event
+      break;
+
+    // Add more cases for other events as needed
+
+    default:
+      console.log("Unknown event type:", eventType);
+    // Handle unknown event type
+  }
+
   res.status(200).send("Waiting for stack!");
 });
 
