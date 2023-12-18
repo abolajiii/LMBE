@@ -2,6 +2,10 @@ const authRoute = require("express").Router();
 const controller = require("../controller/auth.controller");
 const { authMiddleware } = require("../middleware/auth");
 
+authRoute.get("/", async (req, res) => {
+  res.status(200).send("Hello Pay stack!");
+});
+
 authRoute.get("/dashboard", authMiddleware, controller.getDashboardDetails);
 
 authRoute.get("/jobs", authMiddleware, controller.getAllJobs);
