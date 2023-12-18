@@ -21,7 +21,13 @@ const userSchema = new mongoose.Schema(
         ref: "Transaction",
       },
     ],
-    plan: { type: String, default: "free" },
+    subscribedPlan: {
+      type: String,
+      enum: ["trial", "free", "monthly", "yearly"],
+      default: "trial",
+    },
+    trialEnd: { type: Date, default: Date.now() + 30 * 24 * 60 * 60 * 1000 }, // 30 days trial
+
     role: [String], // You can define specific roles like "admin" or "user"
   },
   { timestamps: true }

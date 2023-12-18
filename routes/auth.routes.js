@@ -3,6 +3,7 @@ const controller = require("../controller/auth.controller");
 const { authMiddleware } = require("../middleware/auth");
 
 const crypto = require("crypto");
+const { User } = require("../model");
 
 const verifyPaystackWebhook = (payload, signature) => {
   const secretKey = "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
@@ -23,8 +24,40 @@ authRoute.post("/", async (req, res) => {
 
   switch (eventType) {
     case "charge.success":
-      console.log("Charge successful:", eventData);
-      // Add logic for successful charge handling
+      // Extract relevant data from the Paystack event
+      const userEmail = eventData.customer.email;
+      const paymentInterval = eventData.plan.interval;
+
+      // Map Paystack plan intervals to your plan values
+      const planMapping = {
+        monthly: "monthly",
+        annually: "yearly",
+        // Add more mappings if needed
+      };
+
+      // Determine the subscribed plan based on the Paystack event
+      const subscribedPlan = planMapping[paymentInterval] || "free";
+
+      // Update the user's plan in your database
+      try {
+        const user = await User.findOne({ email: userEmail });
+
+        if (user) {
+          // Assuming your User model has a field for the user's subscribed plan
+          user.subscribedPlan = subscribedPlan;
+
+          // Save the updated user to the database
+          await user.save();
+
+          console.log(`User ${userEmail} plan updated to ${subscribedPlan}`);
+        } else {
+          console.log(`User with email ${userEmail} not found`);
+        }
+      } catch (error) {
+        console.error("Error updating user plan:", error);
+        res.status(500).send("Internal Server Error");
+        return;
+      }
       break;
 
     case "charge.dispute.create":
