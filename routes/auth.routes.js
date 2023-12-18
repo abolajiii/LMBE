@@ -44,7 +44,7 @@ authRoute.post("/", async (req, res) => {
 
         if (user) {
           // Assuming your User model has a field for the user's subscribed plan
-          user.subscribedPlan = subscribedPlan;
+          user.plan = subscribedPlan;
 
           // Save the updated user to the database
           await user.save();

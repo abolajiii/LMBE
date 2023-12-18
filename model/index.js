@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
         ref: "Transaction",
       },
     ],
-    subscribedPlan: {
+    plan: {
       type: String,
       enum: ["trial", "free", "monthly", "yearly"],
       default: "trial",
