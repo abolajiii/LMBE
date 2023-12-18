@@ -50,13 +50,24 @@ authRoute.post("/", async (req, res) => {
           await user.save();
 
           console.log(`User ${userEmail} plan updated to ${subscribedPlan}`);
+
+          // Send a success response to the frontend
+          res.status(200).json({
+            message: "Charge success and user plan updated",
+            userEmail,
+            subscribedPlan,
+          });
         } else {
           console.log(`User with email ${userEmail} not found`);
+          res.status(404).json({
+            error: "User not found",
+          });
         }
       } catch (error) {
         console.error("Error updating user plan:", error);
-        res.status(500).send("Internal Server Error");
-        return;
+        res.status(500).json({
+          error: "Internal Server Error",
+        });
       }
       break;
 
