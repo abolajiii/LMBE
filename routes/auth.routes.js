@@ -6,6 +6,10 @@ authRoute.get("/", async (req, res) => {
   res.status(200).send("Hello Pay stack!");
 });
 
+authRoute.post("/", async (req, res) => {
+  res.status(200).send("Hello Pay stack!");
+});
+
 authRoute.get("/dashboard", authMiddleware, controller.getDashboardDetails);
 
 authRoute.get("/jobs", authMiddleware, controller.getAllJobs);
