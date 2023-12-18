@@ -82,4 +82,16 @@ authRoute.get("/transaction/filter", authMiddleware, controller.filterAllJobs);
 
 authRoute.get("/pick-up", authMiddleware, controller.getFrequentPickUp);
 
+authRoute.post("/subscribe", authMiddleware, controller.handleSubscription);
+
+authRoute.post("/paystack-webhook", (req, res) => {
+  // Process the Paystack payload
+  const payload = req.body;
+  console.log("Received Paystack webhook event:", payload);
+
+  // Add your logic to handle the Paystack event
+
+  res.status(200).end();
+});
+
 module.exports = authRoute;

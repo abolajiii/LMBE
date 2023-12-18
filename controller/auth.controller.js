@@ -11,6 +11,7 @@ const { paginateResults, paginateExpense } = require("../utils");
 const bcrypt = require("bcrypt");
 const moment = require("moment");
 const { generateAuthTokens, generateSampleExcel } = require("../helper");
+const axios = require("axios");
 
 const createJobForDay = async (req, res) => {
   const userId = req.user._id; // Assuming you have user authentication middleware
@@ -1750,6 +1751,76 @@ const getFrequentPickUp = async (req, res) => {
   }
 };
 
+const handleSubscription = async (req, res) => {
+  try {
+    const { selectedPlan } = req.body;
+
+    const email = req.user.email;
+
+    // Replace with your actual plan codes and amounts in Naira
+    const YEARLY_PLAN_CODE = "PLN_agl7h5wouo12cc6";
+    const MONTHLY_PLAN_CODE = "PLN_rw0npipbvgo5q7t";
+    const YEARLY_AMOUNT_IN_NAIRA = 30000;
+    const MONTHLY_AMOUNT_IN_NAIRA = 3000;
+
+    // Determine the plan code and amount based on the user's selection
+    let planCode, amountInKobo;
+    if (selectedPlan === "monthly") {
+      planCode = MONTHLY_PLAN_CODE;
+      amountInKobo = MONTHLY_AMOUNT_IN_NAIRA * 100; // Convert Naira to kobo
+    } else if (selectedPlan === "yearly") {
+      planCode = YEARLY_PLAN_CODE;
+      amountInKobo = YEARLY_AMOUNT_IN_NAIRA * 100; // Convert Naira to kobo
+    } else {
+      return res.status(400).json({ error: "Invalid subscription plan" });
+    }
+
+    // Generate the authorization URL
+    const authorizationUrl = await generateAuthorizationUrl(
+      amountInKobo,
+      email,
+      planCode
+    );
+
+    // Send the authorization URL back to the frontend
+    res.json({ authorizationUrl });
+  } catch (error) {
+    console.error("Error handling subscription:", error.message);
+    res.status(500).json;
+  }
+};
+
+const generateAuthorizationUrl = async (amountInKobo, email, planCode) => {
+  const PAYSTACK_SECRET_KEY =
+    "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
+  const PAYSTACK_API_URL = "https://api.paystack.co";
+
+  try {
+    const response = await axios.post(
+      `${PAYSTACK_API_URL}/transaction/initialize`,
+      {
+        amount: amountInKobo,
+        email,
+        plan: planCode,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+
+    const authorizationUrl = response.data.data.authorization_url;
+    return authorizationUrl;
+  } catch (error) {
+    console.error(
+      "Error generating Paystack authorization URL:",
+      error.message
+    );
+    throw error;
+  }
+};
+
 module.exports = {
   createJobForDay,
   getAllJobs,
@@ -1780,4 +1851,5 @@ module.exports = {
   filterAllJobs,
   deleteDailyExpense,
   getFrequentPickUp,
+  handleSubscription,
 };
