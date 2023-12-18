@@ -6,7 +6,15 @@ const getAllUsers = async (req, res) => {
 
   try {
     // Use the find method with a query to exclude the user with the username "admin"
-    const users = await User.find({ username: { $ne: "admin" } });
+    const users = await User.find({ username: { $ne: "admin" } }).sort({
+      createdAt: -1,
+    });
+
+    // Use the countDocuments method with a query to count users with non-free plans
+    const count = await User.countDocuments({
+      username: { $ne: "admin" },
+      plan: { $ne: "free" },
+    });
 
     // Pagination information
     const totalItems = users.length;
@@ -26,6 +34,7 @@ const getAllUsers = async (req, res) => {
     return res.status(200).json({
       message: "Fetched all users successfully",
       users: results,
+      count,
       pagination: {
         totalItems,
         totalPages,
