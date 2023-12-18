@@ -24,21 +24,6 @@ authRoute.post("/", async (req, res) => {
 
   switch (eventType) {
     case "charge.success":
-      // Extract relevant data from the Paystack event
-      const userEmail = eventData.customer.email;
-      const paymentInterval = eventData.plan.interval;
-
-      // Map Paystack plan intervals to your plan values
-      const planMapping = {
-        monthly: "monthly",
-        annually: "yearly",
-        // Add more mappings if needed
-      };
-
-      // Determine the subscribed plan based on the Paystack event
-      const subscribedPlan = planMapping[paymentInterval] || "free";
-
-      // Update the user's plan in your database
       try {
         const user = await User.findOne({ email: userEmail });
 
@@ -52,24 +37,23 @@ authRoute.post("/", async (req, res) => {
           console.log(`User ${userEmail} plan updated to ${subscribedPlan}`);
 
           // Send a success response to the frontend
-          res.status(200).json({
+          return res.status(200).json({
             message: "Charge success and user plan updated",
             userEmail,
             subscribedPlan,
           });
         } else {
           console.log(`User with email ${userEmail} not found`);
-          res.status(404).json({
+          return res.status(404).json({
             error: "User not found",
           });
         }
       } catch (error) {
         console.error("Error updating user plan:", error);
-        res.status(500).json({
+        return res.status(500).json({
           error: "Internal Server Error",
         });
       }
-      break;
 
     case "charge.dispute.create":
       console.log("Dispute created:", eventData);
