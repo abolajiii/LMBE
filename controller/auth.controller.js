@@ -1825,6 +1825,7 @@ const getCalendarData = async (req, res) => {
   const user = req.user;
   try {
     const response = await calendarData(user._id, new Date());
+
     return res.status(200).json({ success: true, calendarData: response });
   } catch (error) {
     return res
