@@ -18,7 +18,7 @@ authRoute.get("/", async (req, res) => {
   res.status(200).send("Hello Pay stack!");
 });
 
-authRoute.post("/verify", async (req, res) => {
+authRoute.post("/verify", authMiddleware, async (req, res) => {
   const PAYSTACK_SECRET_KEY =
     "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   try {
@@ -44,7 +44,11 @@ authRoute.post("/verify", async (req, res) => {
       // Update your database, send email receipts, etc.
 
       // Respond to the frontend with the verification result
-      res.json({ success: true, message: "Payment verification successful" });
+      res.json({
+        success: true,
+        message: "Payment verification successful",
+        user: req.user,
+      });
     } else {
       res.json({ success: false, message: "Payment verification failed" });
     }
