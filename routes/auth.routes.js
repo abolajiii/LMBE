@@ -14,37 +14,11 @@ const verifyPaystackWebhook = (payload, signature) => {
   return hash === signature;
 };
 
-authRoute.get("/", authMiddleware, async (req, res) => {
-  try {
-    // Check if there's a valid user
-    if (req.user) {
-      // Respond with user details
-      res.json({
-        success: true,
-        user: req.user,
-      });
-    } else {
-      // Respond with a message indicating no user
-      res.json({
-        success: false,
-        message: "No user found",
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching user details:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
-  }
+authRoute.get("/", async (req, res) => {
+  res.status(200).send("Hello Pay stack!");
 });
 
-authRoute.post("/verify", authMiddleware, async (req, res) => {
-  const id = req.user._id;
-
-  const user = await User.findOne({
-    _id: id,
-  });
+authRoute.post("/verify", async (req, res) => {
   const PAYSTACK_SECRET_KEY =
     "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   try {
@@ -70,11 +44,7 @@ authRoute.post("/verify", authMiddleware, async (req, res) => {
       // Update your database, send email receipts, etc.
 
       // Respond to the frontend with the verification result
-      res.json({
-        success: true,
-        message: "Payment verification successful",
-        user,
-      });
+      res.json({ success: true, message: "Payment verification successful" });
     } else {
       res.json({ success: false, message: "Payment verification failed" });
     }
@@ -101,8 +71,6 @@ authRoute.post("/paystack-webhook", (req, res) => {
 
   res.status(200).end();
 });
-
-authRoute.use(authMiddleware);
 
 authRoute.post("/", async (req, res) => {
   const eventData = req.body.data;
@@ -279,86 +247,86 @@ authRoute.post("/", async (req, res) => {
   res.status(200).send("Event handled successfully!");
 });
 
-authRoute.get("/dashboard", controller.getDashboardDetails);
+authRoute.get("/dashboard", authMiddleware, controller.getDashboardDetails);
 
-authRoute.get("/jobs", controller.getAllJobs);
+authRoute.get("/jobs", authMiddleware, controller.getAllJobs);
 
-authRoute.post("/job/create", controller.createJobForDay);
+authRoute.post("/job/create", authMiddleware, controller.createJobForDay);
 
-authRoute.get("/job/:id", controller.viewJob);
+authRoute.get("/job/:id", authMiddleware, controller.viewJob);
 
 authRoute.post(
   "/job/:id/update-all",
-
+  authMiddleware,
   controller.updateAllJobsInTransaction
 );
 
-authRoute.get("/job/single/:jobId", controller.viewSingleJob);
+authRoute.get("/job/single/:jobId", authMiddleware, controller.viewSingleJob);
 
-authRoute.put("/job/single/:jobId", controller.updateJob);
+authRoute.put("/job/single/:jobId", authMiddleware, controller.updateJob);
 
-authRoute.post("/job/upload", controller.uploadJob);
+authRoute.post("/job/upload", authMiddleware, controller.uploadJob);
 
-authRoute.delete("/job/single/:jobId", controller.deleteJob);
+authRoute.delete("/job/single/:jobId", authMiddleware, controller.deleteJob);
 
-authRoute.get("/expenses", controller.getAllExpenses);
+authRoute.get("/expenses", authMiddleware, controller.getAllExpenses);
 
-authRoute.post("/expense/create", controller.createExpense);
+authRoute.post("/expense/create", authMiddleware, controller.createExpense);
 
-authRoute.get("/expense/:id", controller.viewExpense);
+authRoute.get("/expense/:id", authMiddleware, controller.viewExpense);
 
 authRoute.delete(
   "/expense/:expenseId",
-
+  authMiddleware,
   controller.deleteDailyExpense
 );
 
 authRoute.get(
   "/generate/daily",
-
+  authMiddleware,
   controller.generateDailyReport
 );
 
 authRoute.get(
   "/generate/weekly",
-
+  authMiddleware,
   controller.generateWeeklyReport
 );
 
 authRoute.get(
   "/generate/monthly",
-
+  authMiddleware,
   controller.generateMonthlyReport
 );
 
 authRoute.get(
   "/generate/barchart",
-
+  authMiddleware,
   controller.getBarChartDetails
 );
 
-authRoute.get("/clients", controller.getClients);
+authRoute.get("/clients", authMiddleware, controller.getClients);
 
-authRoute.get("/allclients", controller.fetchClients);
+authRoute.get("/allclients", authMiddleware, controller.fetchClients);
 
-authRoute.post("/client/create", controller.createClient);
+authRoute.post("/client/create", authMiddleware, controller.createClient);
 
-authRoute.put("/update-profile", controller.updateProfile);
+authRoute.put("/update-profile", authMiddleware, controller.updateProfile);
 
-authRoute.post("/verify-password", controller.verifyPassword);
+authRoute.post("/verify-password", authMiddleware, controller.verifyPassword);
 
-authRoute.put("/update-password", controller.updatePassword);
+authRoute.put("/update-password", authMiddleware, controller.updatePassword);
 
-authRoute.post("/valid-token", controller.verifyRefreshToken);
+authRoute.post("/valid-token", authMiddleware, controller.verifyRefreshToken);
 
 authRoute.get("/download-sample", controller.downloadExcelSample);
 
-authRoute.get("/job/:id/filter", controller.filterJobs);
+authRoute.get("/job/:id/filter", authMiddleware, controller.filterJobs);
 
-authRoute.get("/transaction/filter", controller.filterAllJobs);
+authRoute.get("/transaction/filter", authMiddleware, controller.filterAllJobs);
 
-authRoute.get("/pick-up", controller.getFrequentPickUp);
+authRoute.get("/pick-up", authMiddleware, controller.getFrequentPickUp);
 
-authRoute.post("/subscribe", controller.handleSubscription);
+authRoute.post("/subscribe", authMiddleware, controller.handleSubscription);
 
 module.exports = authRoute;
