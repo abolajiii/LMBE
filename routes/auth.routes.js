@@ -40,7 +40,7 @@ authRoute.get("/", authMiddleware, async (req, res) => {
 });
 
 authRoute.post("/verify", async (req, res) => {
-  const id = req.user.id;
+  const id = req.user._id;
 
   const user = await User.findOne({
     _id: id,
