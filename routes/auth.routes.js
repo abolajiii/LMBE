@@ -42,7 +42,11 @@ authRoute.get("/", async (req, res) => {
 });
 
 authRoute.post("/verify", async (req, res) => {
-  const plan = req.user.plan;
+  const id = req.user.id;
+
+  const user = await User.findOne({
+    _id: id,
+  });
   const PAYSTACK_SECRET_KEY =
     "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   try {
@@ -71,7 +75,7 @@ authRoute.post("/verify", async (req, res) => {
       res.json({
         success: true,
         message: "Payment verification successful",
-        plan,
+        plan: user.plan,
       });
     } else {
       res.json({ success: false, message: "Payment verification failed" });
