@@ -4,11 +4,11 @@ const { authMiddleware } = require("../middleware/auth");
 
 const crypto = require("crypto");
 const { User } = require("../model");
+const config = require("../config");
 
 const verifyPaystackWebhook = (payload, signature) => {
-  const secretKey = "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   const hash = crypto
-    .createHmac("sha512", secretKey)
+    .createHmac("sha512", config.PAYSTACK_SECRET_KEY)
     .update(payload)
     .digest("hex");
   return hash === signature;
@@ -19,8 +19,6 @@ authRoute.get("/", async (req, res) => {
 });
 
 authRoute.post("/verify", async (req, res) => {
-  const PAYSTACK_SECRET_KEY =
-    "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   try {
     // Assuming you are receiving JSON data with trxRef and reference
     const { reference } = req.body;
@@ -30,7 +28,7 @@ authRoute.post("/verify", async (req, res) => {
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`, // Replace with your Paystack secret key
+          Authorization: `Bearer ${config.PAYSTACK_SECRET_KEY}`, // Replace with your Paystack secret key
         },
       }
     );
