@@ -5,8 +5,6 @@ const axios = require("axios");
 const crypto = require("crypto");
 const { User } = require("../model");
 
-authRoute.use(authMiddleware);
-
 const verifyPaystackWebhook = (payload, signature) => {
   const secretKey = "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   const hash = crypto
@@ -16,7 +14,7 @@ const verifyPaystackWebhook = (payload, signature) => {
   return hash === signature;
 };
 
-authRoute.get("/", async (req, res) => {
+authRoute.get("/", authMiddleware, async (req, res) => {
   try {
     // Check if there's a valid user
     if (req.user) {
@@ -75,7 +73,7 @@ authRoute.post("/verify", async (req, res) => {
       res.json({
         success: true,
         message: "Payment verification successful",
-        plan: user.plan,
+        user,
       });
     } else {
       res.json({ success: false, message: "Payment verification failed" });
@@ -103,6 +101,8 @@ authRoute.post("/paystack-webhook", (req, res) => {
 
   res.status(200).end();
 });
+
+authRoute.use(authMiddleware);
 
 authRoute.post("/", async (req, res) => {
   const eventData = req.body.data;
