@@ -1,7 +1,7 @@
 const authRoute = require("express").Router();
 const controller = require("../controller/auth.controller");
 const { authMiddleware } = require("../middleware/auth");
-
+const axios = require("axios");
 const crypto = require("crypto");
 const { User } = require("../model");
 
