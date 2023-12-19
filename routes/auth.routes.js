@@ -92,7 +92,7 @@ authRoute.post("/paystack-webhook", (req, res) => {
     // Add your logic to update your app based on the webhook event
   } else {
     // Invalid signature, ignore the webhook event
-    console.error("Invalid Paystack webhook signature");
+    console.error("Invalid Paystack webhook signaturee");
   }
 
   res.status(200).end();
