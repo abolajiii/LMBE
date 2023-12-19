@@ -4,11 +4,11 @@ const { authMiddleware } = require("../middleware/auth");
 
 const crypto = require("crypto");
 const { User } = require("../model");
-const config = require("../config");
 
 const verifyPaystackWebhook = (payload, signature) => {
+  const secretKey = "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   const hash = crypto
-    .createHmac("sha512", config.PAYSTACK_SECRET_KEY)
+    .createHmac("sha512", secretKey)
     .update(payload)
     .digest("hex");
   return hash === signature;
@@ -19,6 +19,8 @@ authRoute.get("/", async (req, res) => {
 });
 
 authRoute.post("/verify", async (req, res) => {
+  const PAYSTACK_SECRET_KEY =
+    "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   try {
     // Assuming you are receiving JSON data with trxRef and reference
     const { reference } = req.body;
@@ -28,7 +30,7 @@ authRoute.post("/verify", async (req, res) => {
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${config.PAYSTACK_SECRET_KEY}`, // Replace with your Paystack secret key
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`, // Replace with your Paystack secret key
         },
       }
     );
@@ -50,6 +52,24 @@ authRoute.post("/verify", async (req, res) => {
     console.error("Error verifying payment:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
+});
+
+authRoute.post("/paystack-webhook", (req, res) => {
+  const payload = JSON.stringify(req.body);
+  const signature = req.headers["x-paystack-signature"];
+
+  if (verifyPaystackWebhook(payload, signature)) {
+    // Signature is valid, process the webhook event
+    const event = req.body;
+    console.log("Received Paystack webhook event:");
+
+    // Add your logic to update your app based on the webhook event
+  } else {
+    // Invalid signature, ignore the webhook event
+    console.error("Invalid Paystack webhook signature");
+  }
+
+  res.status(200).end();
 });
 
 authRoute.post("/", async (req, res) => {
@@ -308,24 +328,5 @@ authRoute.get("/transaction/filter", authMiddleware, controller.filterAllJobs);
 authRoute.get("/pick-up", authMiddleware, controller.getFrequentPickUp);
 
 authRoute.post("/subscribe", authMiddleware, controller.handleSubscription);
-
-authRoute.post("/paystack-webhook", (req, res) => {
-  const payload = JSON.stringify(req.body);
-  const signature = req.headers["x-paystack-signature"];
-  console.log();
-
-  if (verifyPaystackWebhook(payload, signature)) {
-    // Signature is valid, process the webhook event
-    const event = req.body;
-    console.log("Received Paystack webhook event:");
-
-    // Add your logic to update your app based on the webhook event
-  } else {
-    // Invalid signature, ignore the webhook event
-    console.error("Invalid Paystack webhook signature");
-  }
-
-  res.status(200).end();
-});
 
 module.exports = authRoute;

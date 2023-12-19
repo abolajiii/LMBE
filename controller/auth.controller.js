@@ -12,7 +12,6 @@ const bcrypt = require("bcrypt");
 const moment = require("moment");
 const { generateAuthTokens, generateSampleExcel } = require("../helper");
 const axios = require("axios");
-const config = require("../config");
 
 const createJobForDay = async (req, res) => {
   const userId = req.user._id; // Assuming you have user authentication middleware
@@ -1792,9 +1791,13 @@ const handleSubscription = async (req, res) => {
 };
 
 const generateAuthorizationUrl = async (amountInKobo, email, planCode) => {
+  const PAYSTACK_SECRET_KEY =
+    "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
+  const PAYSTACK_API_URL = "https://api.paystack.co";
+
   try {
     const response = await axios.post(
-      `${config.PAYSTACK_API_URL}/transaction/initialize`,
+      `${PAYSTACK_API_URL}/transaction/initialize`,
       {
         amount: amountInKobo,
         email,
@@ -1802,7 +1805,7 @@ const generateAuthorizationUrl = async (amountInKobo, email, planCode) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${config.PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
         },
       }
     );
