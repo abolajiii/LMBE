@@ -226,6 +226,8 @@ authRoute.post("/paystack-webhook", async (req, res) => {
 });
 
 authRoute.post("/verify", authMiddleware, async (req, res) => {
+  //
+  const user = await User.findOne({ _id: req.user._id });
   const PAYSTACK_SECRET_KEY =
     "sk_test_41a6539c733c9086a37a78e2cdb17a295c476d62";
   try {
@@ -254,7 +256,7 @@ authRoute.post("/verify", authMiddleware, async (req, res) => {
       res.json({
         success: true,
         message: "Payment verification successful",
-        user: req.user,
+        user,
       });
     } else {
       res.json({ success: false, message: "Payment verification failed" });
