@@ -18,6 +18,40 @@ authRoute.get("/", async (req, res) => {
   res.status(200).send("Hello Pay stack!");
 });
 
+authRoute.post("/verify", async (req, res) => {
+  try {
+    // Assuming you are receiving JSON data with trxRef and reference
+    const { reference } = req.body;
+
+    // Fetch transaction details from Paystack to verify payment
+    const paystackResponse = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          Authorization: `Bearer YOUR_PAYSTACK_SECRET_KEY`, // Replace with your Paystack secret key
+        },
+      }
+    );
+
+    // Check if the transaction was successful
+    if (
+      paystackResponse.data.data.status === "success" &&
+      paystackResponse.data.data.reference === reference
+    ) {
+      // Perform additional verification logic if needed
+      // Update your database, send email receipts, etc.
+
+      // Respond to the frontend with the verification result
+      res.json({ success: true, message: "Payment verification successful" });
+    } else {
+      res.json({ success: false, message: "Payment verification failed" });
+    }
+  } catch (error) {
+    console.error("Error verifying payment:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+});
+
 authRoute.post("/", async (req, res) => {
   const eventData = req.body.data;
   const eventType = req.body.event;
