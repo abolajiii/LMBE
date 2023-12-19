@@ -1821,6 +1821,59 @@ const generateAuthorizationUrl = async (amountInKobo, email, planCode) => {
   }
 };
 
+const getCalendarData = async (req, res) => {
+  const user = req.user;
+  try {
+    const response = await calendarData(user._id, new Date());
+    return res.status(200).json({ success: true, calendarData: response });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, error: "Internal Server Error", error });
+  }
+};
+
+const calendarData = async (userId, date) => {
+  try {
+    // Find the transactions for the specified month and user
+    const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+    const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+    const transactions = await Transaction.find({
+      user: userId,
+      createdAt: {
+        $gte: startOfMonth,
+        $lte: endOfMonth,
+      },
+    }).populate("jobs");
+
+    // Get the current day
+    const currentDay = date.getDate();
+
+    // Initialize jobsPerDay with default values up to the current day
+    const jobsPerDay = Array.from({ length: currentDay }, (_, index) => ({
+      day: index + 1,
+      jobs: 0,
+      returns: 0,
+      transactionId: "",
+    }));
+
+    // Process the jobs data to update the values
+    transactions.forEach((transaction) => {
+      const day = transaction.createdAt.getDate();
+      const index = day - 1;
+      jobsPerDay[index].returns = transaction.totalAmountPaid;
+      jobsPerDay[index].jobs = transaction.numberOfJobs;
+      jobsPerDay[index].transactionId = transaction._id;
+    });
+
+    return jobsPerDay;
+  } catch (error) {
+    console.error("Error fetching calendar data:", error);
+    throw error;
+  }
+};
+
 module.exports = {
   createJobForDay,
   getAllJobs,
@@ -1852,4 +1905,5 @@ module.exports = {
   deleteDailyExpense,
   getFrequentPickUp,
   handleSubscription,
+  getCalendarData,
 };

@@ -349,4 +349,6 @@ authRoute.get("/pick-up", authMiddleware, controller.getFrequentPickUp);
 
 authRoute.post("/subscribe", authMiddleware, controller.handleSubscription);
 
+authRoute.get("/calendar", authMiddleware, controller.getCalendarData);
+
 module.exports = authRoute;
