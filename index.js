@@ -169,58 +169,6 @@ const generateMockData = async () => {
   }
 };
 
-const getPickUpFrequency = async (daysThreshold = 17, numberOfCount = 3) => {
-  const user = await User.findOne({
-    username: "mike",
-  });
-
-  const userId = user._id;
-
-  try {
-    const currentDate = new Date();
-    const startDate = new Date(currentDate);
-    startDate.setDate(startDate.getDate() - daysThreshold);
-
-    const result = await Job.aggregate([
-      {
-        $match: {
-          user: userId, // Assuming there's a user field in your Job model
-          createdAt: { $gte: startDate, $lte: currentDate },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            customerName: "$customerName",
-            pickUp: "$pickUp",
-          },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $match: {
-          count: { $gt: numberOfCount - 1 }, // Adjust this threshold as needed
-        },
-      },
-    ]);
-
-    return result;
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-};
-
-// getPickUpFrequency()
-//   .then((res) => {
-//     console.log("Pick-up frequency:", res);
-//   })
-//   .catch((error) => {
-//     console.error("Error frequency", error);
-//   });
-
-// newDnd();
-
 // Call the function to generate mock data
 // generateMockData()
 //   .then(() => {

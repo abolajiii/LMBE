@@ -1826,7 +1826,16 @@ const getCalendarData = async (req, res) => {
   try {
     const response = await calendarData(user._id, new Date());
 
-    return res.status(200).json({ success: true, calendarData: response });
+    // const weatherData = await getWeatherData(user.state);
+    // const data = {
+    //   icon: weatherData.weather[0].icon,
+    //   description: weatherData.weather[0].description,
+    //   temp: weatherData.main.temp,
+    // };
+
+    return res
+      .status(200)
+      .json({ success: true, calendarData: response, weatherData: "" });
   } catch (error) {
     return res
       .status(500)
@@ -1840,19 +1849,24 @@ const calendarData = async (userId, date) => {
     const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
     const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
+    // Find all transactions within the month and future transactions
     const transactions = await Transaction.find({
       user: userId,
       createdAt: {
         $gte: startOfMonth,
-        $lte: endOfMonth,
       },
     }).populate("jobs");
 
     // Get the current day
     const currentDay = date.getDate();
 
-    // Initialize jobsPerDay with default values up to the current day
-    const jobsPerDay = Array.from({ length: currentDay }, (_, index) => ({
+    // Initialize jobsPerDay with default values for all days in the month
+    const daysInMonth = new Date(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      0
+    ).getDate();
+    const jobsPerDay = Array.from({ length: daysInMonth }, (_, index) => ({
       day: index + 1,
       jobs: 0,
       returns: 0,
@@ -1871,6 +1885,28 @@ const calendarData = async (userId, date) => {
     return jobsPerDay;
   } catch (error) {
     console.error("Error fetching calendar data:", error);
+    throw error;
+  }
+};
+
+const getWeatherData = async (state = "lagos") => {
+  const options = {
+    method: "GET",
+    url: `https://open-weather13.p.rapidapi.com/city/${state}`,
+    headers: {
+      "X-RapidAPI-Key": "3234b7e096msh61b66ef085672bdp1f9088jsnec764739c0f1",
+      "X-RapidAPI-Host": "open-weather13.p.rapidapi.com",
+    },
+  };
+
+  try {
+    const response = await axios.request(options);
+
+    console.log(response);
+
+    return response.data;
+  } catch (error) {
+    console.log(error);
     throw error;
   }
 };
