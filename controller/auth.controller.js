@@ -1821,33 +1821,10 @@ const generateAuthorizationUrl = async (amountInKobo, email, planCode) => {
   }
 };
 
-const getCalendarData = async (req, res) => {
-  const user = req.user;
-  try {
-    const response = await calendarData(user._id, new Date());
-
-    // const weatherData = await getWeatherData(user.state);
-    // const data = {
-    //   icon: weatherData.weather[0].icon,
-    //   description: weatherData.weather[0].description,
-    //   temp: weatherData.main.temp,
-    // };
-
-    return res
-      .status(200)
-      .json({ success: true, calendarData: response, weatherData: "" });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, error: "Internal Server Error", error });
-  }
-};
-
 const calendarData = async (userId, date) => {
   try {
     // Find the transactions for the specified month and user
     const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-    const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
     // Find all transactions within the month and future transactions
     const transactions = await Transaction.find({
@@ -1889,24 +1866,81 @@ const calendarData = async (userId, date) => {
   }
 };
 
+const getCalendarData = async (req, res) => {
+  const user = req.user;
+  try {
+    const response = await calendarData(user._id, new Date());
+    const weatherData = await getWeatherData(user.state);
+
+    return res.status(200).json({
+      success: true,
+      calendarData: response,
+      weatherData: weatherData.timelines.hourly,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, error: "Internal Server Error", error });
+  }
+};
+
 const getWeatherData = async (state = "lagos") => {
+  const locationInNigeria = {
+    abia: { lat: 5.4175, long: 7.5538 },
+    adamawa: { lat: 9.3239, long: 12.3986 },
+    akwaIbom: { lat: 5.0079, long: 7.8497 },
+    anambra: { lat: 6.2109, long: 7.0694 },
+    bauchi: { lat: 10.3158, long: 9.845 },
+    bayelsa: { lat: 4.9261, long: 6.2641 },
+    benue: { lat: 7.1908, long: 8.1416 },
+    borno: { lat: 11.8167, long: 13.15 },
+    crossRiver: { lat: 5.8711, long: 8.5256 },
+    delta: { lat: 5.5299, long: 5.9999 },
+    ebonyi: { lat: 6.267, long: 8.1 },
+    edo: { lat: 6.335, long: 5.6031 },
+    ekiti: { lat: 7.6355, long: 5.2302 },
+    enugu: { lat: 6.4503, long: 7.5166 },
+    abuja: { lat: 9.0579, long: 7.4951 },
+    gombe: { lat: 10.2862, long: 11.1675 },
+    imo: { lat: 5.4924, long: 7.0263 },
+    jigawa: { lat: 11.6236, long: 9.334 },
+    kaduna: { lat: 10.5167, long: 7.4333 },
+    kano: { lat: 12.0, long: 8.5167 },
+    katsina: { lat: 11.5, long: 7.5 },
+    kebbi: { lat: 12.4534, long: 4.1975 },
+    kogi: { lat: 7.7709, long: 6.7227 },
+    kwara: { lat: 8.4854, long: 4.2816 },
+    lagos: { lat: 6.5244, long: 3.3792 },
+    nasarawa: { lat: 8.4799, long: 7.7082 },
+    niger: { lat: 9.3068, long: 6.418 },
+    ogun: { lat: 7.1557, long: 3.3451 },
+    ondo: { lat: 7.2516, long: 5.2105 },
+    osun: { lat: 7.5615, long: 4.5204 },
+    oyo: { lat: 7.3775, long: 3.947 },
+    plateau: { lat: 9.2389, long: 9.6326 },
+    rivers: { lat: 4.8484, long: 7.0139 },
+    sokoto: { lat: 13.0572, long: 5.2427 },
+    taraba: { lat: 7.9784, long: 9.3784 },
+    yobe: { lat: 12.165, long: 11.7969 },
+    zamfara: { lat: 12.1858, long: 6.0424 },
+  };
+
+  const coords = locationInNigeria[state];
+
   const options = {
     method: "GET",
-    url: `https://open-weather13.p.rapidapi.com/city/${state}`,
-    headers: {
-      "X-RapidAPI-Key": "3234b7e096msh61b66ef085672bdp1f9088jsnec764739c0f1",
-      "X-RapidAPI-Host": "open-weather13.p.rapidapi.com",
-    },
+    url: `https://api.tomorrow.io/v4/weather/forecast?location=${
+      (coords.lat, coords.long)
+    }&apikey=KNI8jUkSAXvdPTidxvjtgjHdSGNiQ6aj`,
   };
 
   try {
     const response = await axios.request(options);
 
-    console.log(response);
-
     return response.data;
   } catch (error) {
     console.log(error);
+    // console.log(error);
     throw error;
   }
 };
