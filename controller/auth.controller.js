@@ -21,33 +21,22 @@ const createJobForDay = async (req, res) => {
   // Retrieve user information (assuming you have a User model)
   const user = await User.findById(userId);
 
-  const formatDate = (date) => date.split("T")[0];
-
-  // Increment user.multipleCount if user is on the free plan and there are multiple deliveries
-  if (user.plan === "free" && data.delivery.length > 1) {
-    if (!user.multipleCount) {
-      user.multipleCount = 0;
-      await user.save();
-    }
-
-    if (user.multipleCount <= 2) {
-      // Allow creating jobs if multipleCount is 0
-      user.multipleCount++;
-      await user.save();
-    } else {
-      return res.status(400).json({ error: "Please upgrade current plan" });
-    }
-  }
-
   try {
+    const startOfDay = new Date(data.date);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(data.date);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
     let transaction = await Transaction.findOne({
       user: userId,
       createdAt: {
-        $gte: formatDate(data.date),
+        $gte: startOfDay,
+        $lt: endOfDay,
       },
     });
 
-    if (!transaction) {
+    if (!transaction || transaction === null) {
       // If no transaction, create a new one
       transaction = new Transaction({
         user: userId,
@@ -390,20 +379,21 @@ const uploadJob = async (req, res) => {
       await client.save();
     }
 
-    const selectedDate = moment(date).startOf("day");
+    const startOfDay = new Date(date);
+    startOfDay.setUTCHours(0, 0, 0, 0);
 
-    const createdAt = selectedDate.clone().endOf("day").toDate();
+    const endOfDay = new Date(date);
+    endOfDay.setUTCHours(23, 59, 59, 999);
 
-    // Check if there's an existing transaction for the selected date
     let transaction = await Transaction.findOne({
       user: userId,
       createdAt: {
-        $gte: selectedDate.toDate(),
-        $lt: createdAt,
+        $gte: startOfDay,
+        $lt: endOfDay,
       },
     });
 
-    if (!transaction) {
+    if (!transaction || transaction === null) {
       // If no transaction, create a new one
       transaction = new Transaction({
         user: userId,
@@ -413,8 +403,9 @@ const uploadJob = async (req, res) => {
         paymentStatus: "not-paid",
         totalAmountPaid: 0,
         jobs: [],
-        createdAt,
+        createdAt: date,
       });
+      await transaction.save();
     }
 
     // Handle the job details
@@ -428,7 +419,7 @@ const uploadJob = async (req, res) => {
         payer: mapPayer(row.Payer || row.payer),
         jobStatus: "pending",
         paymentStatus: "not-paid",
-        createdAt,
+        createdAt: date,
         user: userId,
       };
 
@@ -1870,14 +1861,15 @@ const getCalendarData = async (req, res) => {
   const user = req.user;
   try {
     const response = await calendarData(user._id, new Date());
-    const weatherData = await getWeatherData(user.state);
+    // const weatherData = await getWeatherData(user.state);
 
     return res.status(200).json({
       success: true,
       calendarData: response,
-      weatherData: weatherData.timelines.hourly,
+      // weatherData: weatherData.timelines.daily,
     });
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ success: false, error: "Internal Server Error", error });

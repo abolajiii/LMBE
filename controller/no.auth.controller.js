@@ -67,7 +67,6 @@ const createNewUser = async (user) => {
       openingBalance: 0,
       state,
       role: ["user"],
-      plan: "free",
     });
 
     await newUser.save();
@@ -75,6 +74,36 @@ const createNewUser = async (user) => {
     return newUser;
   } catch (error) {
     throw error;
+  }
+};
+
+const signUpUser = async (req, res) => {
+  const user = req.body.data;
+
+  try {
+    const newUser = await createNewUser(user);
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateAuthTokens(newUser);
+
+    // Create a new instance of RefreshToken
+    const newRefreshToken = new RefreshToken({
+      token: refreshToken,
+      user: newUser._id,
+    });
+
+    // Save the new RefreshToken instance
+    await newRefreshToken.save();
+
+    // Send the welcome email
+    await sendWelcomeEmail(newUser);
+    res.json({
+      user: newUser,
+      token: { refreshToken, accessToken },
+    });
+  } catch (error) {
+    // console.log("Error creating user:", error);
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -186,36 +215,6 @@ const sendOtpToEmail = async (user, otp, res) => {
       });
     }
   });
-};
-
-const signUpUser = async (req, res) => {
-  const user = req.body.data;
-
-  try {
-    const newUser = await createNewUser(user);
-
-    // Generate tokens
-    const { accessToken, refreshToken } = generateAuthTokens(newUser);
-
-    // Create a new instance of RefreshToken
-    const newRefreshToken = new RefreshToken({
-      token: refreshToken,
-      user: newUser._id,
-    });
-
-    // Save the new RefreshToken instance
-    await newRefreshToken.save();
-
-    // Send the welcome email
-    await sendWelcomeEmail(newUser);
-    res.json({
-      user: newUser,
-      token: { refreshToken, accessToken },
-    });
-  } catch (error) {
-    // console.log("Error creating user:", error);
-    res.status(400).json({ error: error.message });
-  }
 };
 
 const verifyEmail = async (req, res) => {

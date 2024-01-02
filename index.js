@@ -63,6 +63,8 @@ const newDnd = async () => {
   console.log("done");
 };
 
+
+
 const generateMockData = async () => {
   const user = await User.findOne({ username: "kim" });
   const userId = user._id; // Replace with the actual user ID
@@ -179,5 +181,8 @@ const generateMockData = async () => {
 //     console.error("Error creating mock data:", error);
 //     process.exit(1);
 //   });
+
+
+
 
 app.listen(PORT, console.log(`PORT ${PORT}`));
