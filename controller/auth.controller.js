@@ -1493,8 +1493,7 @@ const verifyPassword = async (req, res) => {
   const password = req.body.password;
 
   try {
-    const isMatch = bcrypt.compare(password, user.password);
-    // Return true if the passwords match, otherwise false
+    const isMatch = await bcrypt.compare(password, user.password);
     res.status(200).json({ isMatch });
   } catch (error) {
     // Handle any errors during the password verification process
