@@ -1027,8 +1027,8 @@ const getComparisonNotes = (data) => {
 };
 
 const getBarChartDetails = async (req, res) => {
-  const year = 2023;
   const userId = req.user._id;
+  const year = req.query.filter;
 
   try {
     const chartData = {
@@ -1703,7 +1703,7 @@ const getFrequentPickUp = async (req, res) => {
 
   const daysThreshold = 17;
 
-  const numberOfCount = 2;
+  const numberOfCount = 10;
 
   try {
     const currentDate = new Date();

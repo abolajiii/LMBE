@@ -74,8 +74,6 @@ authRoute.post("/paystack-webhook", async (req, res) => {
             // Save the updated user to the database
             await user.save();
 
-            console.log(`User ${userEmail} plan updated to ${subscribedPlan}`);
-
             // Send a success response to the frontend
             return res.status(200).json({
               message: "Charge success and user plan updated",

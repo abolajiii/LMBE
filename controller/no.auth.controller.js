@@ -146,7 +146,7 @@ const signInUser = async (req, res) => {
         transactions,
         totalAmount: totalTransactions,
         createdAt: user.createdAt,
-        plan: user.plan,
+        plan: "free",
         multipleCount: user.multipleCount,
       },
       token: { refreshToken, accessToken },
